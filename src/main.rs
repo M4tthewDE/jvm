@@ -124,6 +124,10 @@ enum ConstantPoolInfo {
     Class {
         name_index: u16,
     },
+    NameAndType {
+        name_index: u16,
+        descriptor_index: u16,
+    },
 }
 
 impl ConstantPoolInfo {
@@ -131,8 +135,9 @@ impl ConstantPoolInfo {
         let mut tag = [0u8; 1];
         c.read_exact(&mut tag).unwrap();
         match tag[0] {
-            10 => ConstantPoolInfo::method_ref(c),
             7 => ConstantPoolInfo::class(c),
+            10 => ConstantPoolInfo::method_ref(c),
+            12 => ConstantPoolInfo::name_and_type(c),
             t => panic!("invalid constant pool tag {t}"),
         }
     }
@@ -157,6 +162,21 @@ impl ConstantPoolInfo {
         ConstantPoolInfo::MethodRef {
             class_index,
             name_and_type_index,
+        }
+    }
+
+    fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let mut name_index = [0u8; 2];
+        c.read_exact(&mut name_index).unwrap();
+        let name_index = u16::from_be_bytes(name_index);
+
+        let mut descriptor_index = [0u8; 2];
+        c.read_exact(&mut descriptor_index).unwrap();
+        let descriptor_index = u16::from_be_bytes(descriptor_index);
+
+        ConstantPoolInfo::NameAndType {
+            name_index,
+            descriptor_index,
         }
     }
 }
