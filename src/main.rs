@@ -128,6 +128,9 @@ enum ConstantPoolInfo {
         name_index: u16,
         descriptor_index: u16,
     },
+    Utf {
+        value: String,
+    },
 }
 
 impl ConstantPoolInfo {
@@ -135,6 +138,7 @@ impl ConstantPoolInfo {
         let mut tag = [0u8; 1];
         c.read_exact(&mut tag).unwrap();
         match tag[0] {
+            1 => ConstantPoolInfo::utf8(c),
             7 => ConstantPoolInfo::class(c),
             10 => ConstantPoolInfo::method_ref(c),
             12 => ConstantPoolInfo::name_and_type(c),
@@ -178,5 +182,17 @@ impl ConstantPoolInfo {
             name_index,
             descriptor_index,
         }
+    }
+
+    fn utf8(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let mut length = [0u8; 2];
+        c.read_exact(&mut length).unwrap();
+        let length = u16::from_be_bytes(length);
+
+        let mut value = vec![0u8; length as usize];
+        c.read_exact(&mut value).unwrap();
+        let value = String::from_utf8(value).unwrap();
+
+        ConstantPoolInfo::Utf { value }
     }
 }
