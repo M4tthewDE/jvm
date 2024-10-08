@@ -145,7 +145,7 @@ impl ClassFile {
         info!(methods_count);
 
         let mut methods = Vec::new();
-        for i in 0..methods_count as usize {
+        for i in 0..methods_count {
             let method = Method::new(&mut c, &constant_pool);
             info!("Method {i}: {method:?}");
             methods.push(method);
@@ -334,7 +334,7 @@ impl Method {
         let attributes_count = u16::from_be_bytes(attributes_count);
 
         let mut attributes = Vec::new();
-        for _ in 0..attributes_count as usize {
+        for _ in 0..attributes_count {
             attributes.push(Attribute::new(c, constant_pool));
         }
 
@@ -348,6 +348,12 @@ impl Method {
 }
 
 #[derive(Clone, Debug)]
+struct LineNumberTableEntry {
+    start_pc: u16,
+    line_number: u16,
+}
+
+#[derive(Clone, Debug)]
 enum Attribute {
     Code {
         name_index: u16,
@@ -357,6 +363,11 @@ enum Attribute {
         code: Vec<u8>,
         exception_table_length: u16,
         attributes: Vec<Attribute>,
+    },
+    LineNumberTable {
+        name_index: u16,
+        length: u32,
+        table: Vec<LineNumberTableEntry>,
     },
 }
 
@@ -375,10 +386,39 @@ impl Attribute {
         if let ConstantPoolInfo::Utf { value } = pool_info {
             match value.as_str() {
                 "Code" => Attribute::code(c, name_index, length, constant_pool),
+                "LineNumberTable" => Attribute::line_number_table(c, name_index, length),
                 i => panic!("unknown attribute {i}"),
             }
         } else {
             panic!("")
+        }
+    }
+
+    fn line_number_table(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+        let mut table_length = [0u8; 2];
+        c.read_exact(&mut table_length).unwrap();
+        let table_length = u16::from_be_bytes(table_length);
+
+        let mut table = Vec::new();
+        for _ in 0..table_length {
+            let mut start_pc = [0u8; 2];
+            c.read_exact(&mut start_pc).unwrap();
+            let start_pc = u16::from_be_bytes(start_pc);
+
+            let mut line_number = [0u8; 2];
+            c.read_exact(&mut line_number).unwrap();
+            let line_number = u16::from_be_bytes(line_number);
+
+            table.push(LineNumberTableEntry {
+                start_pc,
+                line_number,
+            });
+        }
+
+        Attribute::LineNumberTable {
+            name_index,
+            length,
+            table,
         }
     }
 
@@ -416,7 +456,7 @@ impl Attribute {
         let attributes_count = u16::from_be_bytes(attributes_count);
 
         let mut attributes = Vec::new();
-        for _ in 0..attributes_count as usize {
+        for _ in 0..attributes_count {
             attributes.push(Attribute::new(c, constant_pool));
         }
 
