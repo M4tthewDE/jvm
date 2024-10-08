@@ -144,6 +144,13 @@ impl ClassFile {
         let methods_count = u16::from_be_bytes(methods_count);
         info!(methods_count);
 
+        let mut methods = Vec::new();
+        for i in 0..methods_count as usize {
+            let method = Method::new(&mut c, &constant_pool);
+            info!("Method {i}: {method:?}");
+            methods.push(method);
+        }
+
         todo!("class file loading");
     }
 }
@@ -294,6 +301,164 @@ impl AccessFlag {
 
         if (val & 0x0400) != 0 {
             flags.push(AccessFlag::Abstract);
+        }
+
+        flags
+    }
+}
+
+#[derive(Clone, Debug)]
+struct Method {
+    access_flags: Vec<MethodFlag>,
+    name_index: u16,
+    descriptor_index: u16,
+    code_attribute: Attribute,
+}
+
+impl Method {
+    fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Method {
+        let mut access_flags = [0u8; 2];
+        c.read_exact(&mut access_flags).unwrap();
+        let access_flags = MethodFlag::flags(u16::from_be_bytes(access_flags));
+
+        let mut name_index = [0u8; 2];
+        c.read_exact(&mut name_index).unwrap();
+        let name_index = u16::from_be_bytes(name_index);
+
+        let mut descriptor_index = [0u8; 2];
+        c.read_exact(&mut descriptor_index).unwrap();
+        let descriptor_index = u16::from_be_bytes(descriptor_index);
+
+        let mut attributes_count = [0u8; 2];
+        c.read_exact(&mut attributes_count).unwrap();
+        let attributes_count = u16::from_be_bytes(attributes_count);
+
+        let code_attribute = Attribute::new(c, constant_pool);
+
+        Method {
+            access_flags,
+            name_index,
+            descriptor_index,
+            code_attribute,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum Attribute {
+    Code {
+        name_index: u16,
+        length: u32,
+        max_stacks: u16,
+        max_locals: u16,
+        code: Vec<u8>,
+        exception_table_length: u16,
+    },
+}
+
+impl Attribute {
+    fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
+        let mut attribute_name_index = [0u8; 2];
+        c.read_exact(&mut attribute_name_index).unwrap();
+        let name_index = u16::from_be_bytes(attribute_name_index);
+
+        let mut attribute_length = [0u8; 4];
+        c.read_exact(&mut attribute_length).unwrap();
+        let length = u32::from_be_bytes(attribute_length);
+
+        let pool_info = constant_pool.get(name_index as usize).unwrap();
+
+        if let ConstantPoolInfo::Utf { value } = pool_info {
+            match value.as_str() {
+                "Code" => Attribute::code(c, name_index, length),
+                i => panic!("unknown attribute {i}"),
+            }
+        } else {
+            panic!("")
+        }
+    }
+
+    fn code(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+        let mut max_stacks = [0u8; 2];
+        c.read_exact(&mut max_stacks).unwrap();
+        let max_stacks = u16::from_be_bytes(max_stacks);
+
+        let mut max_locals = [0u8; 2];
+        c.read_exact(&mut max_locals).unwrap();
+        let max_locals = u16::from_be_bytes(max_locals);
+
+        let mut code_length = [0u8; 4];
+        c.read_exact(&mut code_length).unwrap();
+        let code_length = u32::from_be_bytes(code_length);
+
+        assert!(code_length > 0);
+
+        let mut code = vec![0u8; code_length as usize];
+        c.read_exact(&mut code).unwrap();
+
+        let mut exception_table_length = [0u8; 2];
+        c.read_exact(&mut exception_table_length).unwrap();
+        let exception_table_length = u16::from_be_bytes(exception_table_length);
+
+        assert_eq!(exception_table_length, 0, "exceptions are not implemented");
+
+        Attribute::Code {
+            name_index,
+            length,
+            max_stacks,
+            max_locals,
+            code,
+            exception_table_length,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum MethodFlag {
+    Public,
+    Private,
+    Protected,
+    Static,
+    Final,
+    Synchronized,
+    Native,
+    Abstract,
+}
+
+impl MethodFlag {
+    fn flags(val: u16) -> Vec<MethodFlag> {
+        let mut flags = Vec::new();
+
+        if (val & 0x0001) != 0 {
+            flags.push(MethodFlag::Public);
+        }
+
+        if (val & 0x0002) != 0 {
+            flags.push(MethodFlag::Private);
+        }
+
+        if (val & 0x0004) != 0 {
+            flags.push(MethodFlag::Protected);
+        }
+
+        if (val & 0x0008) != 0 {
+            flags.push(MethodFlag::Static);
+        }
+
+        if (val & 0x0010) != 0 {
+            flags.push(MethodFlag::Final);
+        }
+
+        if (val & 0x0020) != 0 {
+            flags.push(MethodFlag::Synchronized);
+        }
+
+        if (val & 0x0100) != 0 {
+            flags.push(MethodFlag::Native);
+        }
+
+        if (val & 0x0400) != 0 {
+            flags.push(MethodFlag::Abstract);
         }
 
         flags
