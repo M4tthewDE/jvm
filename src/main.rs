@@ -105,11 +105,44 @@ impl ClassFile {
         assert!(constant_pool_count > 0);
 
         let mut constant_pool = Vec::with_capacity(constant_pool_count as usize);
-        for _ in 0..constant_pool_count {
+        constant_pool.push(ConstantPoolInfo::Reserved);
+        for i in 0..constant_pool_count - 1 {
             let cp_info = ConstantPoolInfo::new(&mut c);
-            info!("Constant pool info: {cp_info:?}");
+            info!("Constant pool info {}: {cp_info:?}", i + 1);
             constant_pool.push(cp_info);
         }
+
+        let mut access_flags = [0u8; 2];
+        c.read_exact(&mut access_flags).unwrap();
+        let access_flags = AccessFlag::flags(u16::from_be_bytes(access_flags));
+        info!("access_flags: {:?}", access_flags);
+
+        let mut this_class = [0u8; 2];
+        c.read_exact(&mut this_class).unwrap();
+        let this_class = u16::from_be_bytes(this_class);
+        info!(this_class);
+
+        let mut super_class = [0u8; 2];
+        c.read_exact(&mut super_class).unwrap();
+        let super_class = u16::from_be_bytes(super_class);
+        info!(super_class);
+
+        let mut interfaces_count = [0u8; 2];
+        c.read_exact(&mut interfaces_count).unwrap();
+        let interfaces_count = u16::from_be_bytes(interfaces_count);
+        info!(interfaces_count);
+        assert_eq!(interfaces_count, 0, "not implemented");
+
+        let mut fields_count = [0u8; 2];
+        c.read_exact(&mut fields_count).unwrap();
+        let fields_count = u16::from_be_bytes(fields_count);
+        info!(fields_count);
+        assert_eq!(fields_count, 0, "not implemented");
+
+        let mut methods_count = [0u8; 2];
+        c.read_exact(&mut methods_count).unwrap();
+        let methods_count = u16::from_be_bytes(methods_count);
+        info!(methods_count);
 
         todo!("class file loading");
     }
@@ -117,9 +150,17 @@ impl ClassFile {
 
 #[derive(Clone, Debug)]
 enum ConstantPoolInfo {
+    Reserved,
+    FieldRef {
+        class_index: u16,
+        name_and_type_index: u16,
+    },
     MethodRef {
         class_index: u16,
         name_and_type_index: u16,
+    },
+    String {
+        string_index: u16,
     },
     Class {
         name_index: u16,
@@ -140,6 +181,8 @@ impl ConstantPoolInfo {
         match tag[0] {
             1 => ConstantPoolInfo::utf8(c),
             7 => ConstantPoolInfo::class(c),
+            8 => ConstantPoolInfo::string(c),
+            9 => ConstantPoolInfo::field_ref(c),
             10 => ConstantPoolInfo::method_ref(c),
             12 => ConstantPoolInfo::name_and_type(c),
             t => panic!("invalid constant pool tag {t}"),
@@ -169,6 +212,29 @@ impl ConstantPoolInfo {
         }
     }
 
+    fn field_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let mut class_index = [0u8; 2];
+        c.read_exact(&mut class_index).unwrap();
+        let class_index = u16::from_be_bytes(class_index);
+
+        let mut name_and_type_index = [0u8; 2];
+        c.read_exact(&mut name_and_type_index).unwrap();
+        let name_and_type_index = u16::from_be_bytes(name_and_type_index);
+
+        ConstantPoolInfo::FieldRef {
+            class_index,
+            name_and_type_index,
+        }
+    }
+
+    fn string(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let mut string_index = [0u8; 2];
+        c.read_exact(&mut string_index).unwrap();
+        let string_index = u16::from_be_bytes(string_index);
+
+        ConstantPoolInfo::String { string_index }
+    }
+
     fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         let mut name_index = [0u8; 2];
         c.read_exact(&mut name_index).unwrap();
@@ -194,5 +260,42 @@ impl ConstantPoolInfo {
         let value = String::from_utf8(value).unwrap();
 
         ConstantPoolInfo::Utf { value }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum AccessFlag {
+    Public,
+    Final,
+    Super,
+    Interface,
+    Abstract,
+}
+
+impl AccessFlag {
+    fn flags(val: u16) -> Vec<AccessFlag> {
+        let mut flags = Vec::new();
+
+        if (val & 0x0001) != 0 {
+            flags.push(AccessFlag::Public);
+        }
+
+        if (val & 0x0010) != 0 {
+            flags.push(AccessFlag::Final);
+        }
+
+        if (val & 0x0020) != 0 {
+            flags.push(AccessFlag::Super);
+        }
+
+        if (val & 0x0200) != 0 {
+            flags.push(AccessFlag::Interface);
+        }
+
+        if (val & 0x0400) != 0 {
+            flags.push(AccessFlag::Abstract);
+        }
+
+        flags
     }
 }
