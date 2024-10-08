@@ -312,7 +312,7 @@ struct Method {
     access_flags: Vec<MethodFlag>,
     name_index: u16,
     descriptor_index: u16,
-    code_attribute: Attribute,
+    attributes: Vec<Attribute>,
 }
 
 impl Method {
@@ -333,13 +333,16 @@ impl Method {
         c.read_exact(&mut attributes_count).unwrap();
         let attributes_count = u16::from_be_bytes(attributes_count);
 
-        let code_attribute = Attribute::new(c, constant_pool);
+        let mut attributes = Vec::new();
+        for _ in 0..attributes_count as usize {
+            attributes.push(Attribute::new(c, constant_pool));
+        }
 
         Method {
             access_flags,
             name_index,
             descriptor_index,
-            code_attribute,
+            attributes,
         }
     }
 }
@@ -353,6 +356,7 @@ enum Attribute {
         max_locals: u16,
         code: Vec<u8>,
         exception_table_length: u16,
+        attributes: Vec<Attribute>,
     },
 }
 
@@ -370,7 +374,7 @@ impl Attribute {
 
         if let ConstantPoolInfo::Utf { value } = pool_info {
             match value.as_str() {
-                "Code" => Attribute::code(c, name_index, length),
+                "Code" => Attribute::code(c, name_index, length, constant_pool),
                 i => panic!("unknown attribute {i}"),
             }
         } else {
@@ -378,7 +382,12 @@ impl Attribute {
         }
     }
 
-    fn code(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+    fn code(
+        c: &mut Cursor<&Vec<u8>>,
+        name_index: u16,
+        length: u32,
+        constant_pool: &[ConstantPoolInfo],
+    ) -> Attribute {
         let mut max_stacks = [0u8; 2];
         c.read_exact(&mut max_stacks).unwrap();
         let max_stacks = u16::from_be_bytes(max_stacks);
@@ -402,6 +411,15 @@ impl Attribute {
 
         assert_eq!(exception_table_length, 0, "exceptions are not implemented");
 
+        let mut attributes_count = [0u8; 2];
+        c.read_exact(&mut attributes_count).unwrap();
+        let attributes_count = u16::from_be_bytes(attributes_count);
+
+        let mut attributes = Vec::new();
+        for _ in 0..attributes_count as usize {
+            attributes.push(Attribute::new(c, constant_pool));
+        }
+
         Attribute::Code {
             name_index,
             length,
@@ -409,6 +427,7 @@ impl Attribute {
             max_locals,
             code,
             exception_table_length,
+            attributes,
         }
     }
 }
