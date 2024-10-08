@@ -75,8 +75,17 @@ impl ClassLoader {
     }
 }
 
-#[derive(Clone)]
-struct ClassFile {}
+#[derive(Clone, Debug)]
+struct ClassFile {
+    minor_version: u16,
+    major_version: u16,
+    constant_pool: Vec<ConstantPoolInfo>,
+    access_flags: Vec<AccessFlag>,
+    this_class: u16,
+    super_class: u16,
+    methods: Vec<Method>,
+    attributes: Vec<Attribute>,
+}
 
 impl ClassFile {
     #[instrument]
@@ -151,7 +160,27 @@ impl ClassFile {
             methods.push(method);
         }
 
-        todo!("class file loading");
+        let mut attributes_count = [0u8; 2];
+        c.read_exact(&mut attributes_count).unwrap();
+        let attributes_count = u16::from_be_bytes(attributes_count);
+
+        let mut attributes = Vec::new();
+        for _ in 0..attributes_count {
+            attributes.push(Attribute::new(&mut c, &constant_pool));
+        }
+
+        info!("Attributes: {attributes:?}");
+
+        ClassFile {
+            minor_version,
+            major_version,
+            constant_pool,
+            access_flags,
+            this_class,
+            super_class,
+            methods,
+            attributes,
+        }
     }
 }
 
@@ -369,6 +398,12 @@ enum Attribute {
         length: u32,
         table: Vec<LineNumberTableEntry>,
     },
+
+    SourceFile {
+        name_index: u16,
+        length: u32,
+        source_file_index: u16,
+    },
 }
 
 impl Attribute {
@@ -387,10 +422,23 @@ impl Attribute {
             match value.as_str() {
                 "Code" => Attribute::code(c, name_index, length, constant_pool),
                 "LineNumberTable" => Attribute::line_number_table(c, name_index, length),
+                "SourceFile" => Attribute::source_file(c, name_index, length),
                 i => panic!("unknown attribute {i}"),
             }
         } else {
             panic!("")
+        }
+    }
+
+    fn source_file(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+        let mut source_file_index = [0u8; 2];
+        c.read_exact(&mut source_file_index).unwrap();
+        let source_file_index = u16::from_be_bytes(source_file_index);
+
+        Attribute::SourceFile {
+            name_index,
+            length,
+            source_file_index,
         }
     }
 
