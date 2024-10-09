@@ -426,7 +426,10 @@ impl Attribute {
                 i => panic!("unknown attribute {i}"),
             }
         } else {
-            panic!("")
+            panic!(
+                "attribute_name_index must refer to Utf8 entry in constant pool, is {:?}",
+                pool_info
+            );
         }
     }
 
