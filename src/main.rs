@@ -2,6 +2,8 @@
 // https://blogs.oracle.com/javamagazine/post/how-the-jvm-locates-loads-and-runs-libraries
 // https://www.mobilefish.com/services/java_decompiler/java_decompiler.php
 
+use std::path::PathBuf;
+
 use clap::Parser;
 use loader::ClassLoader;
 
@@ -12,7 +14,7 @@ mod parser;
 #[command(version, about, long_about = None)]
 struct Cli {
     #[arg(short, long)]
-    classpath: Option<Vec<String>>,
+    classpath: Option<Vec<PathBuf>>,
     #[arg(short, long)]
     main_class: String,
 }

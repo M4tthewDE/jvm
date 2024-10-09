@@ -10,16 +10,8 @@ pub struct ClassLoader {
 }
 
 impl ClassLoader {
-    pub fn new(cp: Vec<String>) -> ClassLoader {
-        let mut classpath = Vec::new();
-        for path in cp {
-            let p = PathBuf::from(path);
-            if !p.exists() {
-                panic!("Invalid path in classpath: {p:?}");
-            }
-
-            classpath.push(p);
-        }
+    pub fn new(classpath: Vec<PathBuf>) -> ClassLoader {
+        ClassLoader::validate_classpath(&classpath);
 
         ClassLoader {
             classpath,
@@ -27,25 +19,45 @@ impl ClassLoader {
         }
     }
 
-    pub fn load(&mut self, package: &String, name: &String) -> ClassFile {
-        if let Some(class) = self.classes.get(name) {
-            return class.clone();
+    fn validate_classpath(classpath: &[PathBuf]) {
+        for p in classpath {
+            if !p.exists() {
+                panic!("invalid classpath: {p:?}");
+            }
+        }
+    }
+
+    fn key(package: &str, name: &str) -> String {
+        format!("{package}.{name}")
+    }
+
+    pub fn load(&mut self, package: &str, name: &str) {
+        if self.classes.contains_key(&ClassLoader::key(package, name)) {
+            return;
         }
 
+        self.load_class(package, name);
+    }
+
+    fn load_class(&mut self, package: &str, name: &str) {
         info!("Loading class {name:?}");
+        let class = ClassFile::new(&self.find_path(name).unwrap());
+        self.classes
+            .insert(format!("{package}.{name}"), class.clone());
+    }
+
+    fn find_path(&self, name: &str) -> Option<PathBuf> {
+        let file_name = format!("{name}.class");
 
         for path in &self.classpath {
             for dir_entry in path.read_dir().unwrap() {
                 let dir_entry = dir_entry.unwrap();
-                if dir_entry.file_name().into_string().unwrap() == format!("{name}.class") {
-                    let class = ClassFile::new(&dir_entry.path());
-                    self.classes
-                        .insert(format!("{package}.{name}"), class.clone());
-                    return class;
+                if dir_entry.file_name().into_string().unwrap() == file_name {
+                    return Some(dir_entry.path());
                 }
             }
         }
 
-        panic!("Unable to find class {package}.{name}");
+        None
     }
 }
