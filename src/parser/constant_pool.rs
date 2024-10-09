@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstantPoolInfo {
     Reserved,
     FieldRef {

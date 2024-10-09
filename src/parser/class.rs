@@ -116,7 +116,7 @@ impl ClassFile {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum AccessFlag {
     Public,
     Final,
@@ -150,5 +150,122 @@ impl AccessFlag {
         }
 
         flags
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{iter::zip, path::PathBuf};
+
+    use crate::parser::{class::AccessFlag, constant_pool::ConstantPoolInfo};
+
+    use super::ClassFile;
+
+    #[test]
+    fn test_main() {
+        let class = ClassFile::new(&PathBuf::from("testdata/Main.class"));
+
+        assert_eq!(class.minor_version, 0);
+        assert_eq!(class.major_version, 61);
+
+        let pool = vec![
+            ConstantPoolInfo::Reserved,
+            ConstantPoolInfo::MethodRef {
+                class_index: 2,
+                name_and_type_index: 3,
+            },
+            ConstantPoolInfo::Class { name_index: 4 },
+            ConstantPoolInfo::NameAndType {
+                name_index: 5,
+                descriptor_index: 6,
+            },
+            ConstantPoolInfo::Utf {
+                value: "java/lang/Object".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "<init>".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "()V".to_string(),
+            },
+            ConstantPoolInfo::FieldRef {
+                class_index: 8,
+                name_and_type_index: 9,
+            },
+            ConstantPoolInfo::Class { name_index: 10 },
+            ConstantPoolInfo::NameAndType {
+                name_index: 11,
+                descriptor_index: 12,
+            },
+            ConstantPoolInfo::Utf {
+                value: "java/lang/System".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "out".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "Ljava/io/PrintStream;".to_string(),
+            },
+            ConstantPoolInfo::String { string_index: 14 },
+            ConstantPoolInfo::Utf {
+                value: "Hello world.".to_string(),
+            },
+            ConstantPoolInfo::MethodRef {
+                class_index: 16,
+                name_and_type_index: 17,
+            },
+            ConstantPoolInfo::Class { name_index: 18 },
+            ConstantPoolInfo::NameAndType {
+                name_index: 19,
+                descriptor_index: 20,
+            },
+            ConstantPoolInfo::Utf {
+                value: "java/io/PrintStream".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "println".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "(Ljava/lang/String;)V".to_string(),
+            },
+            ConstantPoolInfo::Class { name_index: 22 },
+            ConstantPoolInfo::Utf {
+                value: "Main".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "Code".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "LineNumberTable".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "main".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "([Ljava/lang/String;)V".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "SourceFile".to_string(),
+            },
+            ConstantPoolInfo::Utf {
+                value: "Main.java".to_string(),
+            },
+        ];
+
+        assert_eq!(class.constant_pool.len(), pool.len());
+
+        for (testing, good) in zip(class.constant_pool, pool) {
+            assert_eq!(testing, good);
+        }
+
+        let access_flags = vec![AccessFlag::Public, AccessFlag::Super];
+        assert_eq!(class.access_flags.len(), access_flags.len());
+
+        for (testing, good) in zip(class.access_flags, access_flags) {
+            assert_eq!(testing, good);
+        }
+
+        assert_eq!(class.this_class, 21);
+        assert_eq!(class.super_class, 2);
     }
 }
