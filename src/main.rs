@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use loader::ClassLoader;
+use loader::{class_path::ClassPath, ClassLoader};
 
 mod loader;
 mod parser;
@@ -24,6 +24,7 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let mut class_loader = ClassLoader::new(cli.classpath.unwrap_or_default());
+    let class_path = ClassPath::load(cli.classpath.unwrap_or_default());
+    let mut class_loader = ClassLoader::new(class_path);
     class_loader.load(&"".to_string(), &cli.main_class);
 }
