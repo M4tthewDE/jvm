@@ -26,5 +26,5 @@ fn main() {
 
     let class_path = ClassPath::load(cli.classpath.unwrap_or_default());
     let mut class_loader = ClassLoader::new(class_path);
-    class_loader.load(&"".to_string(), &cli.main_class);
+    class_loader.load("", &cli.main_class);
 }

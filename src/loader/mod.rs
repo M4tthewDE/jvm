@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 use class_path::ClassPath;
 use tracing::info;
@@ -20,12 +20,8 @@ impl ClassLoader {
         }
     }
 
-    fn key(package: &str, name: &str) -> String {
-        format!("{package}.{name}")
-    }
-
     pub fn load(&mut self, package: &str, name: &str) {
-        if self.classes.contains_key(&ClassLoader::key(package, name)) {
+        if self.classes.contains_key(&key(package, name)) {
             return;
         }
 
@@ -37,7 +33,10 @@ impl ClassLoader {
 
         let path = self.class_path.find(name).unwrap();
         let class = ClassFile::new(&path);
-        self.classes
-            .insert(format!("{package}.{name}"), class.clone());
+        self.classes.insert(key(package, name), class.clone());
     }
+}
+
+fn key(package: &str, name: &str) -> String {
+    format!("{package}.{name}")
 }
