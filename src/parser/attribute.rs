@@ -2,13 +2,13 @@ use std::io::{Cursor, Read};
 
 use super::constant_pool::ConstantPoolInfo;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineNumberTableEntry {
-    start_pc: u16,
-    line_number: u16,
+    pub start_pc: u16,
+    pub line_number: u16,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Attribute {
     Code {
         name_index: u16,

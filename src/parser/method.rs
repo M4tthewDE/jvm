@@ -2,12 +2,12 @@ use std::io::{Cursor, Read};
 
 use super::{attribute::Attribute, constant_pool::ConstantPoolInfo};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
-    access_flags: Vec<MethodFlag>,
-    name_index: u16,
-    descriptor_index: u16,
-    attributes: Vec<Attribute>,
+    pub access_flags: Vec<MethodFlag>,
+    pub name_index: u16,
+    pub descriptor_index: u16,
+    pub attributes: Vec<Attribute>,
 }
 
 impl Method {
@@ -42,8 +42,8 @@ impl Method {
     }
 }
 
-#[derive(Clone, Debug)]
-enum MethodFlag {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MethodFlag {
     Public,
     Private,
     Protected,

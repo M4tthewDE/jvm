@@ -157,7 +157,12 @@ impl AccessFlag {
 mod tests {
     use std::{iter::zip, path::PathBuf};
 
-    use crate::parser::{class::AccessFlag, constant_pool::ConstantPoolInfo};
+    use crate::parser::{
+        attribute::{Attribute, LineNumberTableEntry},
+        class::AccessFlag,
+        constant_pool::ConstantPoolInfo,
+        method::{Method, MethodFlag},
+    };
 
     use super::ClassFile;
 
@@ -254,18 +259,87 @@ mod tests {
 
         assert_eq!(class.constant_pool.len(), pool.len());
 
-        for (testing, good) in zip(class.constant_pool, pool) {
-            assert_eq!(testing, good);
+        for (i, (testing, good)) in zip(class.constant_pool, pool).enumerate() {
+            assert_eq!(testing, good, "mismatch in flag {i}");
         }
 
         let access_flags = vec![AccessFlag::Public, AccessFlag::Super];
         assert_eq!(class.access_flags.len(), access_flags.len());
 
-        for (testing, good) in zip(class.access_flags, access_flags) {
-            assert_eq!(testing, good);
+        for (i, (testing, good)) in zip(class.access_flags, access_flags).enumerate() {
+            assert_eq!(testing, good, "mismatch in flag {i}");
         }
 
         assert_eq!(class.this_class, 21);
         assert_eq!(class.super_class, 2);
+
+        let methods = vec![
+            Method {
+                access_flags: vec![MethodFlag::Public],
+                name_index: 5,
+                descriptor_index: 6,
+                attributes: vec![Attribute::Code {
+                    name_index: 23,
+                    length: 29,
+                    max_stacks: 1,
+                    max_locals: 1,
+                    code: vec![0x2a, 0xb7, 0x00, 0x01, 0xb1],
+                    exception_table_length: 0,
+                    attributes: vec![Attribute::LineNumberTable {
+                        name_index: 24,
+                        length: 6,
+                        table: vec![LineNumberTableEntry {
+                            start_pc: 0,
+                            line_number: 1,
+                        }],
+                    }],
+                }],
+            },
+            Method {
+                access_flags: vec![MethodFlag::Public, MethodFlag::Static],
+                name_index: 25,
+                descriptor_index: 26,
+                attributes: vec![Attribute::Code {
+                    name_index: 23,
+                    length: 37,
+                    max_stacks: 2,
+                    max_locals: 1,
+                    code: vec![0xb2, 0x00, 0x07, 0x12, 0x0d, 0xb6, 0x00, 0x0f, 0xb1],
+                    exception_table_length: 0,
+                    attributes: vec![Attribute::LineNumberTable {
+                        name_index: 24,
+                        length: 10,
+                        table: vec![
+                            LineNumberTableEntry {
+                                start_pc: 0,
+                                line_number: 3,
+                            },
+                            LineNumberTableEntry {
+                                start_pc: 8,
+                                line_number: 4,
+                            },
+                        ],
+                    }],
+                }],
+            },
+        ];
+
+        assert_eq!(class.methods.len(), methods.len());
+
+        for (i, (testing, good)) in zip(class.methods, methods).enumerate() {
+            assert_eq!(testing, good, "mismatch in method {i}");
+        }
+
+        let attributes = vec![Attribute::SourceFile {
+            name_index: 27,
+            length: 2,
+            source_file_index: 28,
+        }];
+
+        assert_eq!(class.attributes.len(), attributes.len());
+
+        for (i, (testing, good)) in zip(class.attributes, attributes).enumerate() {
+            assert_eq!(testing, good, "mismatch in attribute {i}");
+        }
     }
 }
