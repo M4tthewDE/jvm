@@ -20,9 +20,9 @@ impl ClassPath {
 
         for path in &self.paths {
             for dir_entry in path.read_dir().unwrap() {
-                let dir_entry = dir_entry.unwrap();
-                if dir_entry.file_name().into_string().unwrap() == file_name {
-                    return Some(dir_entry.path());
+                let path = dir_entry.unwrap().path();
+                if *path.file_name().unwrap() == *file_name {
+                    return Some(path);
                 }
             }
         }
