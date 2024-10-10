@@ -14,7 +14,7 @@ pub struct ClassFile {
     pub minor_version: u16,
     pub major_version: u16,
     pub constant_pool: ConstantPool,
-    pub access_flags: Vec<AccessFlag>,
+    access_flags: Vec<AccessFlag>,
     pub this_class: u16,
     pub super_class: u16,
     pub methods: Vec<Method>,
@@ -72,7 +72,7 @@ impl ClassFile {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AccessFlag {
+enum AccessFlag {
     Public,
     Final,
     Super,
