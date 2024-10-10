@@ -1,4 +1,4 @@
-use std::io::{Cursor, Read};
+use std::io::{Cursor, Read, Seek};
 
 use super::constant_pool::ConstantPoolInfo;
 
@@ -11,8 +11,6 @@ pub struct LineNumberTableEntry {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Attribute {
     Code {
-        name_index: u16,
-        length: u32,
         max_stacks: u16,
         max_locals: u16,
         code: Vec<u8>,
@@ -20,14 +18,10 @@ pub enum Attribute {
         attributes: Vec<Attribute>,
     },
     LineNumberTable {
-        name_index: u16,
-        length: u32,
         table: Vec<LineNumberTableEntry>,
     },
 
     SourceFile {
-        name_index: u16,
-        length: u32,
         source_file_index: u16,
     },
 }
@@ -38,17 +32,15 @@ impl Attribute {
         c.read_exact(&mut attribute_name_index).unwrap();
         let name_index = u16::from_be_bytes(attribute_name_index);
 
-        let mut attribute_length = [0u8; 4];
-        c.read_exact(&mut attribute_length).unwrap();
-        let length = u32::from_be_bytes(attribute_length);
+        c.seek_relative(4).unwrap();
 
         let pool_info = constant_pool.get(name_index as usize).unwrap();
 
         if let ConstantPoolInfo::Utf { value } = pool_info {
             match value.as_str() {
-                "Code" => Attribute::code(c, name_index, length, constant_pool),
-                "LineNumberTable" => Attribute::line_number_table(c, name_index, length),
-                "SourceFile" => Attribute::source_file(c, name_index, length),
+                "Code" => Attribute::code(c, constant_pool),
+                "LineNumberTable" => Attribute::line_number_table(c),
+                "SourceFile" => Attribute::source_file(c),
                 i => panic!("unknown attribute {i}"),
             }
         } else {
@@ -59,19 +51,15 @@ impl Attribute {
         }
     }
 
-    fn source_file(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+    fn source_file(c: &mut Cursor<&Vec<u8>>) -> Attribute {
         let mut source_file_index = [0u8; 2];
         c.read_exact(&mut source_file_index).unwrap();
         let source_file_index = u16::from_be_bytes(source_file_index);
 
-        Attribute::SourceFile {
-            name_index,
-            length,
-            source_file_index,
-        }
+        Attribute::SourceFile { source_file_index }
     }
 
-    fn line_number_table(c: &mut Cursor<&Vec<u8>>, name_index: u16, length: u32) -> Attribute {
+    fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
         let mut table_length = [0u8; 2];
         c.read_exact(&mut table_length).unwrap();
         let table_length = u16::from_be_bytes(table_length);
@@ -92,19 +80,10 @@ impl Attribute {
             });
         }
 
-        Attribute::LineNumberTable {
-            name_index,
-            length,
-            table,
-        }
+        Attribute::LineNumberTable { table }
     }
 
-    fn code(
-        c: &mut Cursor<&Vec<u8>>,
-        name_index: u16,
-        length: u32,
-        constant_pool: &[ConstantPoolInfo],
-    ) -> Attribute {
+    fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
         let mut max_stacks = [0u8; 2];
         c.read_exact(&mut max_stacks).unwrap();
         let max_stacks = u16::from_be_bytes(max_stacks);
@@ -138,8 +117,6 @@ impl Attribute {
         }
 
         Attribute::Code {
-            name_index,
-            length,
             max_stacks,
             max_locals,
             code,
