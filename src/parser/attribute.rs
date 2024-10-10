@@ -33,8 +33,8 @@ impl Attribute {
         c.seek_relative(4).unwrap();
         let pool_info = constant_pool.get(name_index as usize).unwrap();
 
-        if let ConstantPoolInfo::Utf { value } = pool_info {
-            match value.as_str() {
+        if let ConstantPoolInfo::Utf { text } = pool_info {
+            match text.as_str() {
                 "Code" => Attribute::code(c, constant_pool),
                 "LineNumberTable" => Attribute::line_number_table(c),
                 "SourceFile" => Attribute::source_file(c),

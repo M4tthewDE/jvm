@@ -1,6 +1,6 @@
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 
-use super::{parse_u16, parse_u8};
+use super::{parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstantPoolInfo {
@@ -24,7 +24,7 @@ pub enum ConstantPoolInfo {
         descriptor_index: u16,
     },
     Utf {
-        value: String,
+        text: String,
     },
 }
 
@@ -77,12 +77,9 @@ impl ConstantPoolInfo {
     }
 
     fn utf8(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let length = parse_u16(c);
+        let length = parse_u16(c) as usize;
+        let text = String::from_utf8(parse_vec(c, length)).unwrap();
 
-        let mut value = vec![0u8; length as usize];
-        c.read_exact(&mut value).unwrap();
-        let value = String::from_utf8(value).unwrap();
-
-        ConstantPoolInfo::Utf { value }
+        ConstantPoolInfo::Utf { text }
     }
 }

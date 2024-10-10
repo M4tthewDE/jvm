@@ -167,13 +167,13 @@ mod tests {
                 descriptor_index: 6,
             },
             ConstantPoolInfo::Utf {
-                value: "java/lang/Object".to_string(),
+                text: "java/lang/Object".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "<init>".to_string(),
+                text: "<init>".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "()V".to_string(),
+                text: "()V".to_string(),
             },
             ConstantPoolInfo::FieldRef {
                 class_index: 8,
@@ -185,17 +185,17 @@ mod tests {
                 descriptor_index: 12,
             },
             ConstantPoolInfo::Utf {
-                value: "java/lang/System".to_string(),
+                text: "java/lang/System".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "out".to_string(),
+                text: "out".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "Ljava/io/PrintStream;".to_string(),
+                text: "Ljava/io/PrintStream;".to_string(),
             },
             ConstantPoolInfo::String { string_index: 14 },
             ConstantPoolInfo::Utf {
-                value: "Hello world.".to_string(),
+                text: "Hello world.".to_string(),
             },
             ConstantPoolInfo::MethodRef {
                 class_index: 16,
@@ -207,35 +207,35 @@ mod tests {
                 descriptor_index: 20,
             },
             ConstantPoolInfo::Utf {
-                value: "java/io/PrintStream".to_string(),
+                text: "java/io/PrintStream".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "println".to_string(),
+                text: "println".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "(Ljava/lang/String;)V".to_string(),
+                text: "(Ljava/lang/String;)V".to_string(),
             },
             ConstantPoolInfo::Class { name_index: 22 },
             ConstantPoolInfo::Utf {
-                value: "Main".to_string(),
+                text: "Main".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "Code".to_string(),
+                text: "Code".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "LineNumberTable".to_string(),
+                text: "LineNumberTable".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "main".to_string(),
+                text: "main".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "([Ljava/lang/String;)V".to_string(),
+                text: "([Ljava/lang/String;)V".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "SourceFile".to_string(),
+                text: "SourceFile".to_string(),
             },
             ConstantPoolInfo::Utf {
-                value: "Main.java".to_string(),
+                text: "Main.java".to_string(),
             },
         ];
 
