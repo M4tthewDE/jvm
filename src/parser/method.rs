@@ -1,6 +1,6 @@
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 
-use super::{attribute::Attribute, constant_pool::ConstantPoolInfo};
+use super::{attribute::Attribute, constant_pool::ConstantPoolInfo, parse_u16};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
@@ -12,23 +12,12 @@ pub struct Method {
 
 impl Method {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Method {
-        let mut access_flags = [0u8; 2];
-        c.read_exact(&mut access_flags).unwrap();
-        let access_flags = MethodFlag::flags(u16::from_be_bytes(access_flags));
+        let access_flags = MethodFlag::flags(parse_u16(c));
+        let name_index = parse_u16(c);
+        let descriptor_index = parse_u16(c);
 
-        let mut name_index = [0u8; 2];
-        c.read_exact(&mut name_index).unwrap();
-        let name_index = u16::from_be_bytes(name_index);
-
-        let mut descriptor_index = [0u8; 2];
-        c.read_exact(&mut descriptor_index).unwrap();
-        let descriptor_index = u16::from_be_bytes(descriptor_index);
-
-        let mut attributes_count = [0u8; 2];
-        c.read_exact(&mut attributes_count).unwrap();
-        let attributes_count = u16::from_be_bytes(attributes_count);
-
-        let mut attributes = Vec::new();
+        let attributes_count = parse_u16(c) as usize;
+        let mut attributes = Vec::with_capacity(attributes_count);
         for _ in 0..attributes_count {
             attributes.push(Attribute::new(c, constant_pool));
         }

@@ -1,6 +1,8 @@
 use std::io::{Cursor, Read, Seek};
 
-use super::constant_pool::ConstantPoolInfo;
+use crate::parser::parse_u32;
+
+use super::{constant_pool::ConstantPoolInfo, parse_u16};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineNumberTableEntry {
@@ -28,12 +30,8 @@ pub enum Attribute {
 
 impl Attribute {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
-        let mut attribute_name_index = [0u8; 2];
-        c.read_exact(&mut attribute_name_index).unwrap();
-        let name_index = u16::from_be_bytes(attribute_name_index);
-
+        let name_index = parse_u16(c);
         c.seek_relative(4).unwrap();
-
         let pool_info = constant_pool.get(name_index as usize).unwrap();
 
         if let ConstantPoolInfo::Utf { value } = pool_info {
@@ -52,31 +50,19 @@ impl Attribute {
     }
 
     fn source_file(c: &mut Cursor<&Vec<u8>>) -> Attribute {
-        let mut source_file_index = [0u8; 2];
-        c.read_exact(&mut source_file_index).unwrap();
-        let source_file_index = u16::from_be_bytes(source_file_index);
-
-        Attribute::SourceFile { source_file_index }
+        Attribute::SourceFile {
+            source_file_index: parse_u16(c),
+        }
     }
 
     fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
-        let mut table_length = [0u8; 2];
-        c.read_exact(&mut table_length).unwrap();
-        let table_length = u16::from_be_bytes(table_length);
+        let table_length = parse_u16(c);
 
         let mut table = Vec::new();
         for _ in 0..table_length {
-            let mut start_pc = [0u8; 2];
-            c.read_exact(&mut start_pc).unwrap();
-            let start_pc = u16::from_be_bytes(start_pc);
-
-            let mut line_number = [0u8; 2];
-            c.read_exact(&mut line_number).unwrap();
-            let line_number = u16::from_be_bytes(line_number);
-
             table.push(LineNumberTableEntry {
-                start_pc,
-                line_number,
+                start_pc: parse_u16(c),
+                line_number: parse_u16(c),
             });
         }
 
@@ -84,32 +70,18 @@ impl Attribute {
     }
 
     fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
-        let mut max_stacks = [0u8; 2];
-        c.read_exact(&mut max_stacks).unwrap();
-        let max_stacks = u16::from_be_bytes(max_stacks);
-
-        let mut max_locals = [0u8; 2];
-        c.read_exact(&mut max_locals).unwrap();
-        let max_locals = u16::from_be_bytes(max_locals);
-
-        let mut code_length = [0u8; 4];
-        c.read_exact(&mut code_length).unwrap();
-        let code_length = u32::from_be_bytes(code_length);
-
+        let max_stacks = parse_u16(c);
+        let max_locals = parse_u16(c);
+        let code_length = parse_u32(c);
         assert!(code_length > 0);
 
         let mut code = vec![0u8; code_length as usize];
         c.read_exact(&mut code).unwrap();
 
-        let mut exception_table_length = [0u8; 2];
-        c.read_exact(&mut exception_table_length).unwrap();
-        let exception_table_length = u16::from_be_bytes(exception_table_length);
-
+        let exception_table_length = parse_u16(c);
         assert_eq!(exception_table_length, 0, "exceptions are not implemented");
 
-        let mut attributes_count = [0u8; 2];
-        c.read_exact(&mut attributes_count).unwrap();
-        let attributes_count = u16::from_be_bytes(attributes_count);
+        let attributes_count = parse_u16(c);
 
         let mut attributes = Vec::new();
         for _ in 0..attributes_count {

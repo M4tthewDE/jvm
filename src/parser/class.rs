@@ -5,18 +5,20 @@ use std::{
 
 use tracing::{info, instrument};
 
+use crate::parser::parse_u16;
+
 use super::{attribute::Attribute, constant_pool::ConstantPoolInfo, method::Method};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
-    minor_version: u16,
-    major_version: u16,
-    constant_pool: Vec<ConstantPoolInfo>,
-    access_flags: Vec<AccessFlag>,
-    this_class: u16,
-    super_class: u16,
-    methods: Vec<Method>,
-    attributes: Vec<Attribute>,
+    pub minor_version: u16,
+    pub major_version: u16,
+    pub constant_pool: Vec<ConstantPoolInfo>,
+    pub access_flags: Vec<AccessFlag>,
+    pub this_class: u16,
+    pub super_class: u16,
+    pub methods: Vec<Method>,
+    pub attributes: Vec<Attribute>,
 }
 
 impl ClassFile {
@@ -29,19 +31,13 @@ impl ClassFile {
         c.read_exact(&mut magic).unwrap();
         assert_eq!(magic, [0xCA, 0xFE, 0xBA, 0xBE]);
 
-        let mut minor_version = [0u8; 2];
-        c.read_exact(&mut minor_version).unwrap();
-        let minor_version = u16::from_be_bytes(minor_version);
+        let minor_version = parse_u16(&mut c);
         info!(minor_version);
 
-        let mut major_version = [0u8; 2];
-        c.read_exact(&mut major_version).unwrap();
-        let major_version = u16::from_be_bytes(major_version);
+        let major_version = parse_u16(&mut c);
         info!(major_version);
 
-        let mut constant_pool_count = [0u8; 2];
-        c.read_exact(&mut constant_pool_count).unwrap();
-        let constant_pool_count = u16::from_be_bytes(constant_pool_count);
+        let constant_pool_count = parse_u16(&mut c);
         info!(constant_pool_count);
         assert!(constant_pool_count > 0);
 
@@ -53,36 +49,24 @@ impl ClassFile {
             constant_pool.push(cp_info);
         }
 
-        let mut access_flags = [0u8; 2];
-        c.read_exact(&mut access_flags).unwrap();
-        let access_flags = AccessFlag::flags(u16::from_be_bytes(access_flags));
+        let access_flags = AccessFlag::flags(parse_u16(&mut c));
         info!("access_flags: {:?}", access_flags);
 
-        let mut this_class = [0u8; 2];
-        c.read_exact(&mut this_class).unwrap();
-        let this_class = u16::from_be_bytes(this_class);
+        let this_class = parse_u16(&mut c);
         info!(this_class);
 
-        let mut super_class = [0u8; 2];
-        c.read_exact(&mut super_class).unwrap();
-        let super_class = u16::from_be_bytes(super_class);
+        let super_class = parse_u16(&mut c);
         info!(super_class);
 
-        let mut interfaces_count = [0u8; 2];
-        c.read_exact(&mut interfaces_count).unwrap();
-        let interfaces_count = u16::from_be_bytes(interfaces_count);
+        let interfaces_count = parse_u16(&mut c);
         info!(interfaces_count);
         assert_eq!(interfaces_count, 0, "not implemented");
 
-        let mut fields_count = [0u8; 2];
-        c.read_exact(&mut fields_count).unwrap();
-        let fields_count = u16::from_be_bytes(fields_count);
+        let fields_count = parse_u16(&mut c);
         info!(fields_count);
         assert_eq!(fields_count, 0, "not implemented");
 
-        let mut methods_count = [0u8; 2];
-        c.read_exact(&mut methods_count).unwrap();
-        let methods_count = u16::from_be_bytes(methods_count);
+        let methods_count = parse_u16(&mut c);
         info!(methods_count);
 
         let mut methods = Vec::new();
@@ -92,9 +76,7 @@ impl ClassFile {
             methods.push(method);
         }
 
-        let mut attributes_count = [0u8; 2];
-        c.read_exact(&mut attributes_count).unwrap();
-        let attributes_count = u16::from_be_bytes(attributes_count);
+        let attributes_count = parse_u16(&mut c);
 
         let mut attributes = Vec::new();
         for _ in 0..attributes_count {
@@ -117,7 +99,7 @@ impl ClassFile {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-enum AccessFlag {
+pub enum AccessFlag {
     Public,
     Final,
     Super,

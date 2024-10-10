@@ -1,5 +1,7 @@
 use std::io::{Cursor, Read};
 
+use super::{parse_u16, parse_u8};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstantPoolInfo {
     Reserved,
@@ -28,9 +30,9 @@ pub enum ConstantPoolInfo {
 
 impl ConstantPoolInfo {
     pub fn new(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut tag = [0u8; 1];
-        c.read_exact(&mut tag).unwrap();
-        match tag[0] {
+        let tag = parse_u8(c);
+
+        match tag {
             1 => ConstantPoolInfo::utf8(c),
             7 => ConstantPoolInfo::class(c),
             8 => ConstantPoolInfo::string(c),
@@ -42,70 +44,40 @@ impl ConstantPoolInfo {
     }
 
     fn class(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut name_index = [0u8; 2];
-        c.read_exact(&mut name_index).unwrap();
-        let name_index = u16::from_be_bytes(name_index);
-
-        ConstantPoolInfo::Class { name_index }
+        ConstantPoolInfo::Class {
+            name_index: parse_u16(c),
+        }
     }
 
     fn method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut class_index = [0u8; 2];
-        c.read_exact(&mut class_index).unwrap();
-        let class_index = u16::from_be_bytes(class_index);
-
-        let mut name_and_type_index = [0u8; 2];
-        c.read_exact(&mut name_and_type_index).unwrap();
-        let name_and_type_index = u16::from_be_bytes(name_and_type_index);
-
         ConstantPoolInfo::MethodRef {
-            class_index,
-            name_and_type_index,
+            class_index: parse_u16(c),
+            name_and_type_index: parse_u16(c),
         }
     }
 
     fn field_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut class_index = [0u8; 2];
-        c.read_exact(&mut class_index).unwrap();
-        let class_index = u16::from_be_bytes(class_index);
-
-        let mut name_and_type_index = [0u8; 2];
-        c.read_exact(&mut name_and_type_index).unwrap();
-        let name_and_type_index = u16::from_be_bytes(name_and_type_index);
-
         ConstantPoolInfo::FieldRef {
-            class_index,
-            name_and_type_index,
+            class_index: parse_u16(c),
+            name_and_type_index: parse_u16(c),
         }
     }
 
     fn string(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut string_index = [0u8; 2];
-        c.read_exact(&mut string_index).unwrap();
-        let string_index = u16::from_be_bytes(string_index);
-
-        ConstantPoolInfo::String { string_index }
+        ConstantPoolInfo::String {
+            string_index: parse_u16(c),
+        }
     }
 
     fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut name_index = [0u8; 2];
-        c.read_exact(&mut name_index).unwrap();
-        let name_index = u16::from_be_bytes(name_index);
-
-        let mut descriptor_index = [0u8; 2];
-        c.read_exact(&mut descriptor_index).unwrap();
-        let descriptor_index = u16::from_be_bytes(descriptor_index);
-
         ConstantPoolInfo::NameAndType {
-            name_index,
-            descriptor_index,
+            name_index: parse_u16(c),
+            descriptor_index: parse_u16(c),
         }
     }
 
     fn utf8(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let mut length = [0u8; 2];
-        c.read_exact(&mut length).unwrap();
-        let length = u16::from_be_bytes(length);
+        let length = parse_u16(c);
 
         let mut value = vec![0u8; length as usize];
         c.read_exact(&mut value).unwrap();
