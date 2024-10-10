@@ -1,6 +1,6 @@
-use std::io::{Cursor, Read, Seek};
+use std::io::{Cursor, Seek};
 
-use crate::parser::parse_u32;
+use crate::parser::{parse_u32, parse_vec};
 
 use super::{constant_pool::ConstantPoolInfo, parse_u16};
 
@@ -16,7 +16,6 @@ pub enum Attribute {
         max_stacks: u16,
         max_locals: u16,
         code: Vec<u8>,
-        exception_table_length: u16,
         attributes: Vec<Attribute>,
     },
     LineNumberTable {
@@ -56,9 +55,9 @@ impl Attribute {
     }
 
     fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
-        let table_length = parse_u16(c);
+        let table_length = parse_u16(c) as usize;
 
-        let mut table = Vec::new();
+        let mut table = Vec::with_capacity(table_length);
         for _ in 0..table_length {
             table.push(LineNumberTableEntry {
                 start_pc: parse_u16(c),
@@ -72,18 +71,16 @@ impl Attribute {
     fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
         let max_stacks = parse_u16(c);
         let max_locals = parse_u16(c);
-        let code_length = parse_u32(c);
-        assert!(code_length > 0);
 
-        let mut code = vec![0u8; code_length as usize];
-        c.read_exact(&mut code).unwrap();
+        let code_length = parse_u32(c) as usize;
+        assert!(code_length > 0);
+        let code = parse_vec(c, code_length);
 
         let exception_table_length = parse_u16(c);
         assert_eq!(exception_table_length, 0, "exceptions are not implemented");
 
-        let attributes_count = parse_u16(c);
-
-        let mut attributes = Vec::new();
+        let attributes_count = parse_u16(c) as usize;
+        let mut attributes = Vec::with_capacity(attributes_count);
         for _ in 0..attributes_count {
             attributes.push(Attribute::new(c, constant_pool));
         }
@@ -92,7 +89,6 @@ impl Attribute {
             max_stacks,
             max_locals,
             code,
-            exception_table_length,
             attributes,
         }
     }

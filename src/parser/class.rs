@@ -264,7 +264,6 @@ mod tests {
                     max_stacks: 1,
                     max_locals: 1,
                     code: vec![0x2a, 0xb7, 0x00, 0x01, 0xb1],
-                    exception_table_length: 0,
                     attributes: vec![Attribute::LineNumberTable {
                         table: vec![LineNumberTableEntry {
                             start_pc: 0,
@@ -281,7 +280,6 @@ mod tests {
                     max_stacks: 2,
                     max_locals: 1,
                     code: vec![0xb2, 0x00, 0x07, 0x12, 0x0d, 0xb6, 0x00, 0x0f, 0xb1],
-                    exception_table_length: 0,
                     attributes: vec![Attribute::LineNumberTable {
                         table: vec![
                             LineNumberTableEntry {
