@@ -3,6 +3,24 @@ use std::io::Cursor;
 use super::{parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConstantPool {
+    pub infos: Vec<ConstantPoolInfo>,
+}
+
+impl ConstantPool {
+    pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> ConstantPool {
+        let mut infos = Vec::with_capacity(count);
+        infos.push(ConstantPoolInfo::Reserved);
+        for _ in 0..count - 1 {
+            let info = ConstantPoolInfo::new(c);
+            infos.push(info);
+        }
+
+        ConstantPool { infos }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstantPoolInfo {
     Reserved,
     FieldRef {

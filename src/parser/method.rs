@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use super::{attribute::Attribute, constant_pool::ConstantPoolInfo, parse_u16};
+use super::{attribute::Attribute, constant_pool::ConstantPool, parse_u16};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
@@ -11,22 +11,12 @@ pub struct Method {
 }
 
 impl Method {
-    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Method {
-        let access_flags = MethodFlag::flags(parse_u16(c));
-        let name_index = parse_u16(c);
-        let descriptor_index = parse_u16(c);
-
-        let attributes_count = parse_u16(c) as usize;
-        let mut attributes = Vec::with_capacity(attributes_count);
-        for _ in 0..attributes_count {
-            attributes.push(Attribute::new(c, constant_pool));
-        }
-
+    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Method {
         Method {
-            access_flags,
-            name_index,
-            descriptor_index,
-            attributes,
+            access_flags: MethodFlag::flags(parse_u16(c)),
+            name_index: parse_u16(c),
+            descriptor_index: parse_u16(c),
+            attributes: Attribute::attributes(c, constant_pool),
         }
     }
 }

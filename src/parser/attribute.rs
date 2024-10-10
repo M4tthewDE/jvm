@@ -2,12 +2,24 @@ use std::io::{Cursor, Seek};
 
 use crate::parser::{parse_u32, parse_vec};
 
-use super::{constant_pool::ConstantPoolInfo, parse_u16};
+use super::{
+    constant_pool::{ConstantPool, ConstantPoolInfo},
+    parse_u16,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineNumberTableEntry {
     pub start_pc: u16,
     pub line_number: u16,
+}
+
+impl LineNumberTableEntry {
+    fn new(c: &mut Cursor<&Vec<u8>>) -> LineNumberTableEntry {
+        LineNumberTableEntry {
+            start_pc: parse_u16(c),
+            line_number: parse_u16(c),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,24 +40,37 @@ pub enum Attribute {
 }
 
 impl Attribute {
-    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
-        let name_index = parse_u16(c);
+    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Attribute {
+        let name_index = parse_u16(c) as usize;
         c.seek_relative(4).unwrap();
-        let pool_info = constant_pool.get(name_index as usize).unwrap();
 
+        match Attribute::get_text(constant_pool, name_index).as_str() {
+            "Code" => Attribute::code(c, constant_pool),
+            "LineNumberTable" => Attribute::line_number_table(c),
+            "SourceFile" => Attribute::source_file(c),
+            i => panic!("unknown attribute {i}"),
+        }
+    }
+
+    fn get_text(constant_pool: &ConstantPool, name_index: usize) -> String {
+        let pool_info = constant_pool.infos.get(name_index).unwrap();
         if let ConstantPoolInfo::Utf { text } = pool_info {
-            match text.as_str() {
-                "Code" => Attribute::code(c, constant_pool),
-                "LineNumberTable" => Attribute::line_number_table(c),
-                "SourceFile" => Attribute::source_file(c),
-                i => panic!("unknown attribute {i}"),
-            }
+            text.to_string()
         } else {
             panic!(
                 "attribute_name_index must refer to Utf8 entry in constant pool, is {:?}",
                 pool_info
             );
         }
+    }
+
+    pub fn attributes(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Vec<Attribute> {
+        let attributes_count = parse_u16(c) as usize;
+        let mut attributes = Vec::with_capacity(attributes_count);
+        for _ in 0..attributes_count {
+            attributes.push(Attribute::new(c, constant_pool));
+        }
+        attributes
     }
 
     fn source_file(c: &mut Cursor<&Vec<u8>>) -> Attribute {
@@ -56,19 +81,14 @@ impl Attribute {
 
     fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
         let table_length = parse_u16(c) as usize;
-
         let mut table = Vec::with_capacity(table_length);
         for _ in 0..table_length {
-            table.push(LineNumberTableEntry {
-                start_pc: parse_u16(c),
-                line_number: parse_u16(c),
-            });
+            table.push(LineNumberTableEntry::new(c));
         }
-
         Attribute::LineNumberTable { table }
     }
 
-    fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &[ConstantPoolInfo]) -> Attribute {
+    fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Attribute {
         let max_stacks = parse_u16(c);
         let max_locals = parse_u16(c);
 
@@ -79,17 +99,11 @@ impl Attribute {
         let exception_table_length = parse_u16(c);
         assert_eq!(exception_table_length, 0, "exceptions are not implemented");
 
-        let attributes_count = parse_u16(c) as usize;
-        let mut attributes = Vec::with_capacity(attributes_count);
-        for _ in 0..attributes_count {
-            attributes.push(Attribute::new(c, constant_pool));
-        }
-
         Attribute::Code {
             max_stacks,
             max_locals,
             code,
-            attributes,
+            attributes: Attribute::attributes(c, constant_pool),
         }
     }
 }

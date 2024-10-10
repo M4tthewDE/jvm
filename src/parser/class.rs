@@ -3,17 +3,17 @@ use std::{
     path::Path,
 };
 
-use tracing::{info, instrument};
+use tracing::instrument;
 
 use crate::parser::parse_u16;
 
-use super::{attribute::Attribute, constant_pool::ConstantPoolInfo, method::Method};
+use super::{attribute::Attribute, constant_pool::ConstantPool, method::Method};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
     pub minor_version: u16,
     pub major_version: u16,
-    pub constant_pool: Vec<ConstantPoolInfo>,
+    pub constant_pool: ConstantPool,
     pub access_flags: Vec<AccessFlag>,
     pub this_class: u16,
     pub super_class: u16,
@@ -32,58 +32,31 @@ impl ClassFile {
         assert_eq!(magic, [0xCA, 0xFE, 0xBA, 0xBE]);
 
         let minor_version = parse_u16(&mut c);
-        info!(minor_version);
-
         let major_version = parse_u16(&mut c);
-        info!(major_version);
 
-        let constant_pool_count = parse_u16(&mut c);
-        info!(constant_pool_count);
+        let constant_pool_count = parse_u16(&mut c) as usize;
         assert!(constant_pool_count > 0);
 
-        let mut constant_pool = Vec::with_capacity(constant_pool_count as usize);
-        constant_pool.push(ConstantPoolInfo::Reserved);
-        for i in 0..constant_pool_count - 1 {
-            let cp_info = ConstantPoolInfo::new(&mut c);
-            info!("Constant pool info {}: {cp_info:?}", i + 1);
-            constant_pool.push(cp_info);
-        }
+        let constant_pool = ConstantPool::new(&mut c, constant_pool_count);
 
         let access_flags = AccessFlag::flags(parse_u16(&mut c));
-        info!("access_flags: {:?}", access_flags);
-
         let this_class = parse_u16(&mut c);
-        info!(this_class);
-
         let super_class = parse_u16(&mut c);
-        info!(super_class);
-
         let interfaces_count = parse_u16(&mut c);
-        info!(interfaces_count);
         assert_eq!(interfaces_count, 0, "not implemented");
 
         let fields_count = parse_u16(&mut c);
-        info!(fields_count);
         assert_eq!(fields_count, 0, "not implemented");
 
         let methods_count = parse_u16(&mut c);
-        info!(methods_count);
 
         let mut methods = Vec::new();
-        for i in 0..methods_count {
+        for _ in 0..methods_count {
             let method = Method::new(&mut c, &constant_pool);
-            info!("Method {i}: {method:?}");
             methods.push(method);
         }
 
-        let attributes_count = parse_u16(&mut c);
-
-        let mut attributes = Vec::new();
-        for _ in 0..attributes_count {
-            attributes.push(Attribute::new(&mut c, &constant_pool));
-        }
-
-        info!("Attributes: {attributes:?}");
+        let attributes = Attribute::attributes(&mut c, &constant_pool);
 
         ClassFile {
             minor_version,
@@ -239,9 +212,9 @@ mod tests {
             },
         ];
 
-        assert_eq!(class.constant_pool.len(), pool.len());
+        assert_eq!(class.constant_pool.infos.len(), pool.len());
 
-        for (i, (testing, good)) in zip(class.constant_pool, pool).enumerate() {
+        for (i, (testing, good)) in zip(class.constant_pool.infos, pool).enumerate() {
             assert_eq!(testing, good, "mismatch in flag {i}");
         }
 
