@@ -3,6 +3,10 @@ name = "jvm"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "jvm"
+path = "src/lib/mod.rs"
+
 [dependencies]
 clap = { version = "4.5.19", features = ["derive"] }
 tracing = "0.1.40"

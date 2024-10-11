@@ -19,6 +19,22 @@ impl Method {
             attributes: Attribute::attributes(c, constant_pool),
         }
     }
+
+    pub fn is_main(&self, cp: &ConstantPool) -> bool {
+        self.is_public() && self.is_static() && self.name(cp) == "main"
+    }
+
+    fn is_public(&self) -> bool {
+        self.access_flags.contains(&MethodFlag::Public)
+    }
+
+    fn is_static(&self) -> bool {
+        self.access_flags.contains(&MethodFlag::Static)
+    }
+
+    fn name(&self, cp: &ConstantPool) -> String {
+        cp.utf8(self.name_index as usize).unwrap()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

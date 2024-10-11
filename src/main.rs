@@ -5,10 +5,6 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use loader::{class_path::ClassPath, ClassLoader};
-
-mod loader;
-mod parser;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -21,10 +17,6 @@ struct Cli {
 
 fn main() {
     tracing_subscriber::fmt().init();
-
     let cli = Cli::parse();
-
-    let class_path = ClassPath::load(cli.classpath.unwrap_or_default());
-    let mut class_loader = ClassLoader::new(class_path);
-    class_loader.load("", &cli.main_class);
+    jvm::run(cli.classpath.unwrap(), &cli.main_class)
 }

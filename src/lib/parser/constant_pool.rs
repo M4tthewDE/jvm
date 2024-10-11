@@ -18,6 +18,14 @@ impl ConstantPool {
 
         ConstantPool { infos }
     }
+
+    pub fn utf8(&self, index: usize) -> Option<String> {
+        if let ConstantPoolInfo::Utf { text } = self.infos.get(index).unwrap() {
+            Some(text.to_string())
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
