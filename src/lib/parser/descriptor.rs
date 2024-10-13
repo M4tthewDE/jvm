@@ -9,38 +9,42 @@ pub enum FieldType {
     Class(String),
     Short,
     Boolean,
-    Array(Box<FieldType>),
+    Array(Box<Self>),
 }
 
 impl FieldType {
-    fn new(text: &str) -> FieldType {
+    fn new(text: &str) -> Self {
         match text.chars().next().unwrap() {
-            'B' => FieldType::Byte,
-            'C' => FieldType::Char,
-            'D' => FieldType::Double,
-            'F' => FieldType::Float,
-            'I' => FieldType::Int,
-            'J' => FieldType::Long,
-            'L' => FieldType::Class(text[1..text.find(';').unwrap()].to_string()),
-            'S' => FieldType::Short,
-            'Z' => FieldType::Boolean,
-            '[' => FieldType::Array(Box::new(FieldType::new(&text[1..]))),
+            'B' => Self::Byte,
+            'C' => Self::Char,
+            'D' => Self::Double,
+            'F' => Self::Float,
+            'I' => Self::Int,
+            'J' => Self::Long,
+            'L' => Self::Class(Self::class_text(text)),
+            'S' => Self::Short,
+            'Z' => Self::Boolean,
+            '[' => Self::Array(Box::new(Self::new(&text[1..]))),
             c => panic!("INVALID: {c}"),
         }
     }
 
+    fn class_text(text: &str) -> String {
+        text[1..text.find(';').unwrap()].to_string()
+    }
+
     fn size(&self) -> usize {
         match self {
-            FieldType::Byte => "B".len(),
-            FieldType::Char => "C".len(),
-            FieldType::Double => "D".len(),
-            FieldType::Float => "F".len(),
-            FieldType::Int => "I".len(),
-            FieldType::Long => "J".len(),
-            FieldType::Class(name) => "L".len() + name.len() + ";".len(),
-            FieldType::Short => "S".len(),
-            FieldType::Boolean => "B".len(),
-            FieldType::Array(field_type) => "[".len() + field_type.size(),
+            Self::Byte => "B".len(),
+            Self::Char => "C".len(),
+            Self::Double => "D".len(),
+            Self::Float => "F".len(),
+            Self::Int => "I".len(),
+            Self::Long => "J".len(),
+            Self::Class(name) => "L".len() + name.len() + ";".len(),
+            Self::Short => "S".len(),
+            Self::Boolean => "B".len(),
+            Self::Array(field_type) => "[".len() + field_type.size(),
         }
     }
 }
@@ -52,11 +56,11 @@ pub enum ReturnDescriptor {
 }
 
 impl ReturnDescriptor {
-    fn new(text: &str) -> ReturnDescriptor {
+    fn new(text: &str) -> Self {
         if text == "V" {
-            ReturnDescriptor::Void
+            Self::Void
         } else {
-            ReturnDescriptor::Type(FieldType::new(text))
+            Self::Type(FieldType::new(text))
         }
     }
 }
@@ -69,24 +73,28 @@ pub struct MethodDescriptor {
 
 impl MethodDescriptor {
     pub fn new(text: &str) -> Self {
-        MethodDescriptor {
-            parameters: Self::parameters(&text[1..text.find(')').unwrap()]),
-            return_descriptor: ReturnDescriptor::new(&text[text.find(')').unwrap() + 1..]),
+        Self {
+            parameters: Self::parameters(Self::param_text(text)),
+            return_descriptor: ReturnDescriptor::new(Self::return_descriptor_text(text)),
         }
+    }
+
+    fn param_text(text: &str) -> &str {
+        &text[1..text.find(')').unwrap()]
+    }
+
+    fn return_descriptor_text(text: &str) -> &str {
+        &text[text.find(')').unwrap() + 1..]
     }
 
     fn parameters(text: &str) -> Vec<FieldType> {
         let mut parameters = Vec::new();
 
         let mut i = 0;
-        loop {
+        while i != text.len() {
             let parameter = FieldType::new(&text[i..]);
             i += parameter.size();
             parameters.push(parameter);
-
-            if i == text.len() {
-                break;
-            }
         }
 
         parameters
