@@ -63,15 +63,14 @@ impl ReturnDescriptor {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MethodDescriptor {
-    parameters: Vec<FieldType>,
-    return_descriptor: ReturnDescriptor,
+    pub parameters: Vec<FieldType>,
+    pub return_descriptor: ReturnDescriptor,
 }
 
 impl MethodDescriptor {
-    fn new(text: &str) -> Self {
-        let parameters = Self::parameters(&text[1..text.find(')').unwrap()]);
+    pub fn new(text: &str) -> Self {
         MethodDescriptor {
-            parameters,
+            parameters: Self::parameters(&text[1..text.find(')').unwrap()]),
             return_descriptor: ReturnDescriptor::new(&text[text.find(')').unwrap() + 1..]),
         }
     }
