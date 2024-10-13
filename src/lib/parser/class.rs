@@ -69,6 +69,16 @@ impl ClassFile {
             attributes,
         }
     }
+
+    pub fn get_main_method(&self) -> Method {
+        for method in &self.methods {
+            if method.is_main(&self.constant_pool) {
+                return method.clone();
+            }
+        }
+
+        panic!("No main method found")
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

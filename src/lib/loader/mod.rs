@@ -44,6 +44,10 @@ impl ClassLoader {
         verify_main_class(&class, name);
         self.classes.insert(key(package, name), class.clone());
     }
+
+    pub fn get(&self, package: &str, name: &str) -> Option<ClassFile> {
+        self.classes.get(&key(package, name)).cloned()
+    }
 }
 
 fn key(package: &str, name: &str) -> String {
