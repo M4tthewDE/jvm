@@ -3,6 +3,7 @@ use std::io::{Cursor, Read};
 pub mod attribute;
 pub mod class;
 pub mod constant_pool;
+pub mod descriptor;
 pub mod method;
 
 fn parse_u8(c: &mut Cursor<&Vec<u8>>) -> u8 {
