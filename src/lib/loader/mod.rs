@@ -27,10 +27,10 @@ impl ClassLoader {
 
         info!("Loading class {name:?}");
 
-        let path = self.class_path.find(name).expect(&format!(
+        let data = self.class_path.find(package, name).expect(&format!(
             "unable to find class {package}.{name} in classpath"
         ));
-        let class = ClassFile::new(&path);
+        let class = ClassFile::new(&data);
         self.classes.insert(key(package, name), class.clone());
     }
 
@@ -41,8 +41,8 @@ impl ClassLoader {
 
         info!("Loading main class {name:?}");
 
-        let path = self.class_path.find(name).unwrap();
-        let class = ClassFile::new(&path);
+        let data = self.class_path.find("", name).unwrap();
+        let class = ClassFile::new(&data);
         verify_main_class(&class, name);
         self.classes.insert(key(package, name), class.clone());
     }

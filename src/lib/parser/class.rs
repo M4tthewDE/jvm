@@ -23,9 +23,8 @@ pub struct ClassFile {
 
 impl ClassFile {
     #[instrument]
-    pub fn new(p: &Path) -> ClassFile {
-        let bytes = std::fs::read(p).unwrap();
-        let mut c = Cursor::new(&bytes);
+    pub fn new(data: &Vec<u8>) -> ClassFile {
+        let mut c = Cursor::new(data);
 
         let mut magic = [0u8; 4];
         c.read_exact(&mut magic).unwrap();
