@@ -3,7 +3,26 @@ use std::io::Cursor;
 use super::{parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NameAndType {
+    name: String,
+    descriptor: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FieldRef {
+    pub class_ref: ClassRef,
+    name_and_type: NameAndType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassRef {
+    pub package: String,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConstantPool {
+    // TODO: does this need to be pub?
     pub infos: Vec<ConstantPoolInfo>,
 }
 
@@ -26,8 +45,52 @@ impl ConstantPool {
             None
         }
     }
+
+    pub fn field_ref(&self, index: usize) -> Option<FieldRef> {
+        if let ConstantPoolInfo::FieldRef {
+            class_index,
+            name_and_type_index,
+        } = self.infos.get(index).unwrap()
+        {
+            Some(FieldRef {
+                class_ref: self.class_ref(*class_index as usize).unwrap(),
+                name_and_type: self.name_and_type(*name_and_type_index as usize).unwrap(),
+            })
+        } else {
+            None
+        }
+    }
+
+    fn class_ref(&self, index: usize) -> Option<ClassRef> {
+        if let ConstantPoolInfo::ClassRef { name_index } = self.infos.get(index).unwrap() {
+            let text = self.utf8(*name_index as usize).unwrap();
+            let text = text.replace("/", ".");
+            let parts: Vec<&str> = text.split(".").collect();
+            let name = parts.last().unwrap().to_string();
+            let package = parts[..parts.len() - 1].join(".");
+            Some(ClassRef { name, package })
+        } else {
+            None
+        }
+    }
+
+    fn name_and_type(&self, index: usize) -> Option<NameAndType> {
+        if let ConstantPoolInfo::NameAndType {
+            name_index,
+            descriptor_index,
+        } = self.infos.get(index).unwrap()
+        {
+            Some(NameAndType {
+                name: self.utf8(*name_index as usize).unwrap(),
+                descriptor: self.utf8(*descriptor_index as usize).unwrap(),
+            })
+        } else {
+            None
+        }
+    }
 }
 
+// TODO: does this need to be pub?
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstantPoolInfo {
     Reserved,
@@ -42,7 +105,7 @@ pub enum ConstantPoolInfo {
     String {
         string_index: u16,
     },
-    Class {
+    ClassRef {
         name_index: u16,
     },
     NameAndType {
@@ -60,7 +123,7 @@ impl ConstantPoolInfo {
 
         match tag {
             1 => ConstantPoolInfo::utf8(c),
-            7 => ConstantPoolInfo::class(c),
+            7 => ConstantPoolInfo::class_ref(c),
             8 => ConstantPoolInfo::string(c),
             9 => ConstantPoolInfo::field_ref(c),
             10 => ConstantPoolInfo::method_ref(c),
@@ -69,8 +132,8 @@ impl ConstantPoolInfo {
         }
     }
 
-    fn class(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::Class {
+    fn class_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::ClassRef {
             name_index: parse_u16(c),
         }
     }

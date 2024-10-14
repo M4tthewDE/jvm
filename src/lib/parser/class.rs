@@ -144,7 +144,7 @@ mod tests {
                 class_index: 2,
                 name_and_type_index: 3,
             },
-            ConstantPoolInfo::Class { name_index: 4 },
+            ConstantPoolInfo::ClassRef { name_index: 4 },
             ConstantPoolInfo::NameAndType {
                 name_index: 5,
                 descriptor_index: 6,
@@ -162,7 +162,7 @@ mod tests {
                 class_index: 8,
                 name_and_type_index: 9,
             },
-            ConstantPoolInfo::Class { name_index: 10 },
+            ConstantPoolInfo::ClassRef { name_index: 10 },
             ConstantPoolInfo::NameAndType {
                 name_index: 11,
                 descriptor_index: 12,
@@ -184,7 +184,7 @@ mod tests {
                 class_index: 16,
                 name_and_type_index: 17,
             },
-            ConstantPoolInfo::Class { name_index: 18 },
+            ConstantPoolInfo::ClassRef { name_index: 18 },
             ConstantPoolInfo::NameAndType {
                 name_index: 19,
                 descriptor_index: 20,
@@ -198,7 +198,7 @@ mod tests {
             ConstantPoolInfo::Utf {
                 text: "(Ljava/lang/String;)V".to_string(),
             },
-            ConstantPoolInfo::Class { name_index: 22 },
+            ConstantPoolInfo::ClassRef { name_index: 22 },
             ConstantPoolInfo::Utf {
                 text: "Main".to_string(),
             },

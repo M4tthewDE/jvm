@@ -13,6 +13,5 @@ pub fn run(class_path: Vec<PathBuf>, main_class: &str) {
     class_loader.load_main("", main_class);
 
     let mut executor = Executor::new(class_loader);
-
     executor.execute("", main_class);
 }

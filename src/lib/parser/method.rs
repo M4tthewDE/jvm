@@ -52,6 +52,16 @@ impl Method {
             crate::parser::descriptor::ReturnDescriptor::Void
         ) && descriptor.parameters == main_parameters
     }
+
+    pub fn get_code_attribute(&self) -> Option<Attribute> {
+        for attribute in &self.attributes {
+            if let Attribute::Code { .. } = attribute {
+                return Some(attribute.clone());
+            }
+        }
+
+        None
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
