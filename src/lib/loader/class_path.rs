@@ -6,6 +6,8 @@ pub struct ClassPath {
     paths: Vec<PathBuf>,
 }
 
+const JMOD_FILES: [&str; 1] = ["java.base.jmod"];
+
 impl ClassPath {
     pub fn load(mut paths: Vec<PathBuf>) -> ClassPath {
         for p in &paths {
@@ -29,11 +31,9 @@ impl ClassPath {
             for dir_entry in path.read_dir().unwrap() {
                 let path = dir_entry.unwrap().path();
 
-                if let Some(extension) = path.extension() {
-                    if extension == "jmod" {
-                        if let Some(p) = Self::find_in_jmod(&path, package, name) {
-                            return Some(p);
-                        }
+                if JMOD_FILES.contains(&path.file_name().unwrap().to_str().unwrap()) {
+                    if let Some(p) = Self::find_in_jmod(&path, package, name) {
+                        return Some(p);
                     }
                 }
 

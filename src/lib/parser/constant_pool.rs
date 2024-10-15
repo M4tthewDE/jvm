@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use super::{parse_u16, parse_u8, parse_vec};
+use super::{parse_i32, parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
@@ -102,6 +102,10 @@ pub enum ConstantPoolInfo {
         class_index: u16,
         name_and_type_index: u16,
     },
+    InterfaceMethodRef {
+        class_index: u16,
+        name_and_type_index: u16,
+    },
     String {
         string_index: u16,
     },
@@ -115,6 +119,18 @@ pub enum ConstantPoolInfo {
     Utf {
         text: String,
     },
+    InvokeDynamic {
+        bootstrap_method_attr_index: u16,
+        name_and_type_index: u16,
+    },
+    Integer(i32),
+    MethodHandle {
+        reference_kind: u8,
+        reference_index: u16,
+    },
+    MethodType {
+        descriptor_index: u16,
+    },
 }
 
 impl ConstantPoolInfo {
@@ -123,11 +139,16 @@ impl ConstantPoolInfo {
 
         match tag {
             1 => ConstantPoolInfo::utf8(c),
+            3 => ConstantPoolInfo::integer(c),
             7 => ConstantPoolInfo::class_ref(c),
             8 => ConstantPoolInfo::string(c),
             9 => ConstantPoolInfo::field_ref(c),
             10 => ConstantPoolInfo::method_ref(c),
+            11 => ConstantPoolInfo::interface_method_ref(c),
             12 => ConstantPoolInfo::name_and_type(c),
+            15 => ConstantPoolInfo::method_handle(c),
+            16 => ConstantPoolInfo::method_type(c),
+            18 => ConstantPoolInfo::invoke_dynamic(c),
             t => panic!("invalid constant pool tag {t}"),
         }
     }
@@ -140,6 +161,13 @@ impl ConstantPoolInfo {
 
     fn method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::MethodRef {
+            class_index: parse_u16(c),
+            name_and_type_index: parse_u16(c),
+        }
+    }
+
+    fn interface_method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::InterfaceMethodRef {
             class_index: parse_u16(c),
             name_and_type_index: parse_u16(c),
         }
@@ -170,5 +198,36 @@ impl ConstantPoolInfo {
         let text = String::from_utf8(parse_vec(c, length)).unwrap();
 
         ConstantPoolInfo::Utf { text }
+    }
+
+    fn invoke_dynamic(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::InvokeDynamic {
+            bootstrap_method_attr_index: parse_u16(c),
+            name_and_type_index: parse_u16(c),
+        }
+    }
+
+    fn integer(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::Integer(parse_i32(c))
+    }
+
+    fn method_handle(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let reference_kind = parse_u8(c);
+        assert!(
+            reference_kind > 0 && reference_kind < 10,
+            "invalid value for reference_kind {reference_kind}"
+        );
+        let reference_index = parse_u16(c);
+
+        ConstantPoolInfo::MethodHandle {
+            reference_kind,
+            reference_index,
+        }
+    }
+
+    fn method_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::MethodType {
+            descriptor_index: parse_u16(c),
+        }
     }
 }

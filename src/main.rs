@@ -1,6 +1,5 @@
-// https://www.cs.miami.edu/home/burt/reference/java/language_vm_specification.pdf
+// https://docs.oracle.com/javase/specs/jvms/se17/jvms17.pdf
 // https://blogs.oracle.com/javamagazine/post/how-the-jvm-locates-loads-and-runs-libraries
-// https://www.mobilefish.com/services/java_decompiler/java_decompiler.php
 
 use std::path::PathBuf;
 
