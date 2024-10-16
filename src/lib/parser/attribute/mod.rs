@@ -47,6 +47,9 @@ pub enum Attribute {
     RuntimeVisibleAnnotations {
         annotations: Vec<Annotation>,
     },
+    LocalVariableTable {
+        local_variable_table: Vec<LocalVariable>,
+    },
 }
 
 impl Attribute {
@@ -60,6 +63,7 @@ impl Attribute {
             "SourceFile" => Attribute::source_file(c),
             "ConstantValue" => Attribute::constant_value(c),
             "RuntimeVisibleAnnotations" => Attribute::runtime_visible_annotations(c),
+            "LocalVariableTable" => Attribute::local_variable_table(c),
             i => panic!("unknown attribute {i}"),
         }
     }
@@ -134,5 +138,39 @@ impl Attribute {
         }
 
         Attribute::RuntimeVisibleAnnotations { annotations }
+    }
+
+    fn local_variable_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+        let local_variable_table_length = parse_u16(c) as usize;
+
+        let mut local_variable_table = Vec::with_capacity(local_variable_table_length);
+        for _ in 0..local_variable_table_length {
+            local_variable_table.push(LocalVariable::new(c));
+        }
+
+        Attribute::LocalVariableTable {
+            local_variable_table,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LocalVariable {
+    start_pc: u16,
+    length: u16,
+    name_index: u16,
+    descriptor_index: u16,
+    index: u16,
+}
+
+impl LocalVariable {
+    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
+        Self {
+            start_pc: parse_u16(c),
+            length: parse_u16(c),
+            name_index: parse_u16(c),
+            descriptor_index: parse_u16(c),
+            index: parse_u16(c),
+        }
     }
 }
