@@ -134,7 +134,8 @@ mod tests {
 
     #[test]
     fn test_main() {
-        let class = ClassFile::new(&PathBuf::from("testdata/Main.class"));
+        let bytes = std::fs::read(&PathBuf::from("testdata/Main.class")).unwrap();
+        let class = ClassFile::new(&bytes);
 
         assert_eq!(class.minor_version, 0);
         assert_eq!(class.major_version, 61);
