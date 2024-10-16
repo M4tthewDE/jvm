@@ -1,11 +1,15 @@
 use std::io::{Cursor, Seek};
 
+use annotation::Annotation;
+
 use crate::parser::{parse_u32, parse_vec};
 
 use super::{
     constant_pool::{ConstantPool, ConstantPoolInfo},
-    parse_u16, parse_u8,
+    parse_u16,
 };
+
+mod annotation;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineNumberTableEntry {
@@ -130,44 +134,5 @@ impl Attribute {
         }
 
         Attribute::RuntimeVisibleAnnotations { annotations }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Annotation {
-    type_index: u16,
-    element_value_pairs: Vec<(u16, ElementValue)>,
-}
-
-impl Annotation {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        let type_index = parse_u16(c);
-        let num_element_value_pairs = parse_u16(c);
-
-        let mut element_value_pairs = Vec::new();
-        for _ in 0..num_element_value_pairs {
-            let element_name_index = parse_u16(c);
-            let element_value = ElementValue::new(c);
-            element_value_pairs.push((element_name_index, element_value));
-        }
-
-        Self {
-            type_index,
-            element_value_pairs,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ElementValue {}
-impl ElementValue {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        let tag = parse_u8(c) as char;
-
-        match tag {
-            _ => panic!("Unknown element value tag {tag}"),
-        }
-
-        Self {}
     }
 }
