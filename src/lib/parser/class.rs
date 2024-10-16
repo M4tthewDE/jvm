@@ -1,13 +1,10 @@
-use std::{
-    io::{Cursor, Read},
-    path::Path,
-};
+use std::io::{Cursor, Read};
 
 use tracing::instrument;
 
 use crate::parser::parse_u16;
 
-use super::{attribute::Attribute, constant_pool::ConstantPool, method::Method};
+use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, method::Method};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
@@ -17,6 +14,7 @@ pub struct ClassFile {
     access_flags: Vec<AccessFlag>,
     pub this_class: u16,
     pub super_class: u16,
+    pub fields: Vec<Field>,
     pub methods: Vec<Method>,
     pub attributes: Vec<Attribute>,
 }
@@ -37,7 +35,6 @@ impl ClassFile {
         assert!(constant_pool_count > 0);
 
         let constant_pool = ConstantPool::new(&mut c, constant_pool_count);
-
         let access_flags = AccessFlag::flags(parse_u16(&mut c));
         let this_class = parse_u16(&mut c);
         let super_class = parse_u16(&mut c);
@@ -45,7 +42,11 @@ impl ClassFile {
         assert_eq!(interfaces_count, 0, "not implemented");
 
         let fields_count = parse_u16(&mut c);
-        assert_eq!(fields_count, 0, "not implemented");
+        let mut fields = Vec::new();
+        for _ in 0..fields_count {
+            let field = Field::new(&mut c, &constant_pool);
+            fields.push(field);
+        }
 
         let methods_count = parse_u16(&mut c);
 
@@ -64,6 +65,7 @@ impl ClassFile {
             access_flags,
             this_class,
             super_class,
+            fields,
             methods,
             attributes,
         }

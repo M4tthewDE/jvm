@@ -4,7 +4,7 @@ use crate::parser::{parse_u32, parse_vec};
 
 use super::{
     constant_pool::{ConstantPool, ConstantPoolInfo},
-    parse_u16,
+    parse_u16, parse_u8,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -37,6 +37,12 @@ pub enum Attribute {
     SourceFile {
         source_file_index: u16,
     },
+    ConstantValue {
+        constant_value_index: u16,
+    },
+    RuntimeVisibleAnnotations {
+        annotations: Vec<Annotation>,
+    },
 }
 
 impl Attribute {
@@ -48,6 +54,8 @@ impl Attribute {
             "Code" => Attribute::code(c, constant_pool),
             "LineNumberTable" => Attribute::line_number_table(c),
             "SourceFile" => Attribute::source_file(c),
+            "ConstantValue" => Attribute::constant_value(c),
+            "RuntimeVisibleAnnotations" => Attribute::runtime_visible_annotations(c),
             i => panic!("unknown attribute {i}"),
         }
     }
@@ -105,5 +113,61 @@ impl Attribute {
             code,
             attributes: Attribute::attributes(c, constant_pool),
         }
+    }
+
+    fn constant_value(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+        Attribute::ConstantValue {
+            constant_value_index: parse_u16(c),
+        }
+    }
+
+    fn runtime_visible_annotations(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+        let num_annotations = parse_u16(c);
+
+        let mut annotations = Vec::new();
+        for _ in 0..num_annotations {
+            annotations.push(Annotation::new(c));
+        }
+
+        Attribute::RuntimeVisibleAnnotations { annotations }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Annotation {
+    type_index: u16,
+    element_value_pairs: Vec<(u16, ElementValue)>,
+}
+
+impl Annotation {
+    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let type_index = parse_u16(c);
+        let num_element_value_pairs = parse_u16(c);
+
+        let mut element_value_pairs = Vec::new();
+        for _ in 0..num_element_value_pairs {
+            let element_name_index = parse_u16(c);
+            let element_value = ElementValue::new(c);
+            element_value_pairs.push((element_name_index, element_value));
+        }
+
+        Self {
+            type_index,
+            element_value_pairs,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ElementValue {}
+impl ElementValue {
+    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let tag = parse_u8(c) as char;
+
+        match tag {
+            _ => panic!("Unknown element value tag {tag}"),
+        }
+
+        Self {}
     }
 }
