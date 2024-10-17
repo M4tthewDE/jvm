@@ -11,7 +11,10 @@ use tracing::{debug, instrument};
 
 use crate::parser::{parse_u32, parse_vec};
 
-use super::{constant_pool::ConstantPool, parse_u16};
+use super::{
+    constant_pool::{ConstantPool, Index},
+    parse_u16,
+};
 
 mod annotation;
 mod bootstrap_method;
@@ -35,10 +38,10 @@ pub enum Attribute {
     },
 
     SourceFile {
-        source_file_index: u16,
+        source_file_index: Index,
     },
     ConstantValue {
-        constant_value_index: u16,
+        constant_value_index: Index,
     },
     RuntimeVisibleAnnotations {
         annotations: Vec<Annotation>,
@@ -53,14 +56,14 @@ pub enum Attribute {
         entries: Vec<StackMapFrame>,
     },
     Exceptions {
-        exception_index_table: Vec<u16>,
+        exception_index_table: Vec<Index>,
     },
     Signature {
-        signature_index: u16,
+        signature_index: Index,
     },
     Deprecated,
     NestMembers {
-        classes: Vec<u16>,
+        classes: Vec<Index>,
     },
     BootstrapMethods {
         bootstrap_methods: Vec<BootstrapMethod>,
@@ -74,10 +77,10 @@ pub enum Attribute {
 impl Attribute {
     #[instrument(skip_all, name = "attribute")]
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Attribute {
-        let name_index = parse_u16(c) as usize;
+        let name_index = Index::new(parse_u16(c));
         c.seek_relative(4).unwrap();
 
-        let text = Attribute::get_text(constant_pool, name_index);
+        let text = Attribute::get_text(constant_pool, &name_index);
         debug!("parsing attribute {text}");
 
         match text.as_str() {
@@ -99,10 +102,10 @@ impl Attribute {
         }
     }
 
-    fn get_text(constant_pool: &ConstantPool, name_index: usize) -> String {
+    fn get_text(constant_pool: &ConstantPool, name_index: &Index) -> String {
         constant_pool
             .utf8(name_index)
-            .unwrap_or_else(|| panic!("no constant pool utf8 entry found for {name_index}"))
+            .unwrap_or_else(|| panic!("no constant pool utf8 entry found for {name_index:?}"))
     }
 
     pub fn attributes(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Vec<Self> {
@@ -116,7 +119,7 @@ impl Attribute {
 
     fn source_file(c: &mut Cursor<&Vec<u8>>) -> Attribute {
         Attribute::SourceFile {
-            source_file_index: parse_u16(c),
+            source_file_index: Index::new(parse_u16(c)),
         }
     }
 
@@ -154,7 +157,7 @@ impl Attribute {
 
     fn constant_value(c: &mut Cursor<&Vec<u8>>) -> Self {
         Self::ConstantValue {
-            constant_value_index: parse_u16(c),
+            constant_value_index: Index::new(parse_u16(c)),
         }
     }
 
@@ -198,7 +201,7 @@ impl Attribute {
 
         let mut exception_index_table = Vec::new();
         for _ in 0..number_of_exceptions {
-            exception_index_table.push(parse_u16(c));
+            exception_index_table.push(Index::new(parse_u16(c)));
         }
 
         Self::Exceptions {
@@ -219,7 +222,7 @@ impl Attribute {
 
     fn signature(c: &mut Cursor<&Vec<u8>>) -> Self {
         Self::Signature {
-            signature_index: parse_u16(c),
+            signature_index: Index::new(parse_u16(c)),
         }
     }
 
@@ -227,7 +230,7 @@ impl Attribute {
         let number_of_classes = parse_u16(c) as usize;
         let mut classes = Vec::with_capacity(number_of_classes);
         for _ in 0..number_of_classes {
-            classes.push(parse_u16(c));
+            classes.push(Index::new(parse_u16(c)));
         }
 
         Self::NestMembers { classes }

@@ -1,12 +1,16 @@
 use std::io::Cursor;
 
-use super::{attribute::Attribute, constant_pool::ConstantPool, parse_u16};
+use super::{
+    attribute::Attribute,
+    constant_pool::{ConstantPool, Index},
+    parse_u16,
+};
 
 #[derive(Clone, Debug)]
 pub struct Field {
     _access_flags: Vec<FieldFlag>,
-    _name_index: u16,
-    _descriptor_index: u16,
+    _name_index: Index,
+    _descriptor_index: Index,
     _attributes: Vec<Attribute>,
 }
 
@@ -14,8 +18,8 @@ impl Field {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Self {
         Self {
             _access_flags: FieldFlag::flags(parse_u16(c)),
-            _name_index: parse_u16(c),
-            _descriptor_index: parse_u16(c),
+            _name_index: Index::new(parse_u16(c)),
+            _descriptor_index: Index::new(parse_u16(c)),
             _attributes: Attribute::attributes(c, constant_pool),
         }
     }

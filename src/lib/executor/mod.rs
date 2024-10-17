@@ -7,7 +7,7 @@ use crate::{
     parser::{
         attribute::{exception::Exception, Attribute},
         class::ClassFile,
-        constant_pool::{ClassRef, ConstantPool},
+        constant_pool::{ClassRef, ConstantPool, Index},
         method::Method,
     },
 };
@@ -116,13 +116,13 @@ impl Executor {
     }
 
     fn execute_getstatic(&mut self) {
-        let field_ref_index = self.current_code.get_opcode(self.pc + 2) as usize;
+        let field_ref_index = Index::new(self.current_code.get_opcode(self.pc + 2));
         self.pc += 2;
-        self.resolve_field(field_ref_index);
+        self.resolve_field(&field_ref_index);
         todo!();
     }
 
-    fn resolve_field(&mut self, field_ref_index: usize) {
+    fn resolve_field(&mut self, field_ref_index: &Index) {
         let field_ref = self.stack.field_ref(field_ref_index);
         self.resolve_class(&field_ref.class_ref);
         todo!()

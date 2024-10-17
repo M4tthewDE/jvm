@@ -25,6 +25,19 @@ pub struct ConstantPool {
     infos: Vec<ConstantPoolInfo>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Index {
+    index: usize,
+}
+
+impl Index {
+    pub fn new<T: Into<usize>>(index: T) -> Self {
+        Self {
+            index: index.into(),
+        }
+    }
+}
+
 impl ConstantPool {
     pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> ConstantPool {
         let mut infos = Vec::with_capacity(count);
@@ -37,32 +50,36 @@ impl ConstantPool {
         ConstantPool { infos }
     }
 
-    pub fn utf8(&self, index: usize) -> Option<String> {
-        if let ConstantPoolInfo::Utf { text } = self.infos.get(index)? {
+    fn get(&self, index: &Index) -> Option<ConstantPoolInfo> {
+        self.infos.get(index.index).cloned()
+    }
+
+    pub fn utf8(&self, index: &Index) -> Option<String> {
+        if let ConstantPoolInfo::Utf { text } = self.infos.get(index.index)? {
             Some(text.to_string())
         } else {
             None
         }
     }
 
-    pub fn field_ref(&self, index: usize) -> Option<FieldRef> {
+    pub fn field_ref(&self, index: &Index) -> Option<FieldRef> {
         if let ConstantPoolInfo::FieldRef {
             class_index,
             name_and_type_index,
-        } = self.infos.get(index).unwrap()
+        } = self.infos.get(index.index).unwrap()
         {
             Some(FieldRef {
-                class_ref: self.class_ref(*class_index as usize).unwrap(),
-                name_and_type: self.name_and_type(*name_and_type_index as usize).unwrap(),
+                class_ref: self.class_ref(class_index).unwrap(),
+                name_and_type: self.name_and_type(name_and_type_index).unwrap(),
             })
         } else {
             None
         }
     }
 
-    fn class_ref(&self, index: usize) -> Option<ClassRef> {
-        if let ConstantPoolInfo::ClassRef { name_index } = self.infos.get(index).unwrap() {
-            let text = self.utf8(*name_index as usize).unwrap();
+    fn class_ref(&self, index: &Index) -> Option<ClassRef> {
+        if let ConstantPoolInfo::ClassRef { name_index } = self.get(index).unwrap() {
+            let text = self.utf8(&name_index).unwrap();
             let text = text.replace("/", ".");
             let parts: Vec<&str> = text.split(".").collect();
             let name = parts.last().unwrap().to_string();
@@ -73,15 +90,15 @@ impl ConstantPool {
         }
     }
 
-    fn name_and_type(&self, index: usize) -> Option<NameAndType> {
+    fn name_and_type(&self, index: &Index) -> Option<NameAndType> {
         if let ConstantPoolInfo::NameAndType {
             name_index,
             descriptor_index,
-        } = self.infos.get(index).unwrap()
+        } = self.get(index).unwrap()
         {
             Some(NameAndType {
-                name: self.utf8(*name_index as usize).unwrap(),
-                descriptor: self.utf8(*descriptor_index as usize).unwrap(),
+                name: self.utf8(&name_index).unwrap(),
+                descriptor: self.utf8(&descriptor_index).unwrap(),
             })
         } else {
             None
@@ -93,41 +110,41 @@ impl ConstantPool {
 enum ConstantPoolInfo {
     Reserved,
     FieldRef {
-        class_index: u16,
-        name_and_type_index: u16,
+        class_index: Index,
+        name_and_type_index: Index,
     },
     MethodRef {
-        class_index: u16,
-        name_and_type_index: u16,
+        class_index: Index,
+        name_and_type_index: Index,
     },
     InterfaceMethodRef {
-        class_index: u16,
-        name_and_type_index: u16,
+        class_index: Index,
+        name_and_type_index: Index,
     },
     String {
-        string_index: u16,
+        string_index: Index,
     },
     ClassRef {
-        name_index: u16,
+        name_index: Index,
     },
     NameAndType {
-        name_index: u16,
-        descriptor_index: u16,
+        name_index: Index,
+        descriptor_index: Index,
     },
     Utf {
         text: String,
     },
     InvokeDynamic {
-        bootstrap_method_attr_index: u16,
-        name_and_type_index: u16,
+        bootstrap_method_attr_index: Index,
+        name_and_type_index: Index,
     },
     Integer(i32),
     MethodHandle {
         reference_kind: u8,
-        reference_index: u16,
+        reference_index: Index,
     },
     MethodType {
-        descriptor_index: u16,
+        descriptor_index: Index,
     },
 }
 
@@ -153,41 +170,41 @@ impl ConstantPoolInfo {
 
     fn class_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::ClassRef {
-            name_index: parse_u16(c),
+            name_index: Index::new(parse_u16(c)),
         }
     }
 
     fn method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::MethodRef {
-            class_index: parse_u16(c),
-            name_and_type_index: parse_u16(c),
+            class_index: Index::new(parse_u16(c)),
+            name_and_type_index: Index::new(parse_u16(c)),
         }
     }
 
     fn interface_method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::InterfaceMethodRef {
-            class_index: parse_u16(c),
-            name_and_type_index: parse_u16(c),
+            class_index: Index::new(parse_u16(c)),
+            name_and_type_index: Index::new(parse_u16(c)),
         }
     }
 
     fn field_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::FieldRef {
-            class_index: parse_u16(c),
-            name_and_type_index: parse_u16(c),
+            class_index: Index::new(parse_u16(c)),
+            name_and_type_index: Index::new(parse_u16(c)),
         }
     }
 
     fn string(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::String {
-            string_index: parse_u16(c),
+            string_index: Index::new(parse_u16(c)),
         }
     }
 
     fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::NameAndType {
-            name_index: parse_u16(c),
-            descriptor_index: parse_u16(c),
+            name_index: Index::new(parse_u16(c)),
+            descriptor_index: Index::new(parse_u16(c)),
         }
     }
 
@@ -200,8 +217,8 @@ impl ConstantPoolInfo {
 
     fn invoke_dynamic(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::InvokeDynamic {
-            bootstrap_method_attr_index: parse_u16(c),
-            name_and_type_index: parse_u16(c),
+            bootstrap_method_attr_index: Index::new(parse_u16(c)),
+            name_and_type_index: Index::new(parse_u16(c)),
         }
     }
 
@@ -215,17 +232,16 @@ impl ConstantPoolInfo {
             reference_kind > 0 && reference_kind < 10,
             "invalid value for reference_kind {reference_kind}"
         );
-        let reference_index = parse_u16(c);
 
         ConstantPoolInfo::MethodHandle {
             reference_kind,
-            reference_index,
+            reference_index: Index::new(parse_u16(c)),
         }
     }
 
     fn method_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::MethodType {
-            descriptor_index: parse_u16(c),
+            descriptor_index: Index::new(parse_u16(c)),
         }
     }
 }

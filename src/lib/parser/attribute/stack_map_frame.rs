@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use crate::parser::{parse_u16, parse_u8};
+use crate::parser::{constant_pool::Index, parse_u16, parse_u8};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StackMapFrame {
@@ -90,7 +90,7 @@ impl StackMapFrame {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VerificationType {
     Integer,
-    ConstantClass { cpoll_index: u16 },
+    ConstantClass { cpoll_index: Index },
 }
 
 impl VerificationType {
@@ -99,7 +99,7 @@ impl VerificationType {
         match tag {
             1 => VerificationType::Integer,
             7 => VerificationType::ConstantClass {
-                cpoll_index: parse_u16(c),
+                cpoll_index: Index::new(parse_u16(c)),
             },
             _ => panic!("invalid verification type tag {tag}"),
         }

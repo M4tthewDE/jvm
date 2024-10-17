@@ -4,7 +4,7 @@ use tracing::instrument;
 
 use super::{
     attribute::Attribute,
-    constant_pool::ConstantPool,
+    constant_pool::{ConstantPool, Index},
     descriptor::{FieldType, MethodDescriptor},
     parse_u16,
 };
@@ -12,8 +12,8 @@ use super::{
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
     pub access_flags: Vec<MethodFlag>,
-    pub name_index: u16,
-    pub descriptor_index: usize,
+    pub name_index: Index,
+    pub descriptor_index: Index,
     pub attributes: Vec<Attribute>,
 }
 
@@ -22,8 +22,8 @@ impl Method {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Method {
         Method {
             access_flags: MethodFlag::flags(parse_u16(c)),
-            name_index: parse_u16(c),
-            descriptor_index: parse_u16(c) as usize,
+            name_index: Index::new(parse_u16(c)),
+            descriptor_index: Index::new(parse_u16(c)),
             attributes: Attribute::attributes(c, constant_pool),
         }
     }
@@ -41,11 +41,11 @@ impl Method {
     }
 
     fn name(&self, cp: &ConstantPool) -> String {
-        cp.utf8(self.name_index as usize).unwrap()
+        cp.utf8(&self.name_index).unwrap()
     }
 
     fn has_main_args(&self, cp: &ConstantPool) -> bool {
-        let descriptor = MethodDescriptor::new(&cp.utf8(self.descriptor_index).unwrap());
+        let descriptor = MethodDescriptor::new(&cp.utf8(&self.descriptor_index).unwrap());
         let main_parameters = vec![FieldType::Array(Box::new(FieldType::Class(
             "java/lang/String".to_string(),
         )))];

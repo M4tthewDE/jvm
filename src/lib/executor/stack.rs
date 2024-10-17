@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{ConstantPool, FieldRef};
+use crate::parser::constant_pool::{ConstantPool, FieldRef, Index};
 
 #[derive(Debug)]
 struct Word {}
@@ -16,7 +16,7 @@ impl Frame {
         }
     }
 
-    fn field_ref(&self, field_ref_index: usize) -> FieldRef {
+    fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
         self.constant_pool.field_ref(field_ref_index).unwrap()
     }
 }
@@ -39,7 +39,7 @@ impl Stack {
         self.frames.push(Frame::new(constant_pool))
     }
 
-    pub fn field_ref(&self, field_ref_index: usize) -> FieldRef {
+    pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
         self.frames.last().unwrap().field_ref(field_ref_index)
     }
 }
