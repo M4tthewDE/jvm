@@ -7,14 +7,11 @@ use inner_class::InnerClass;
 use line_number_table_entry::LineNumberTableEntry;
 use local_variable::{LocalVariable, LocalVariableType};
 use stack_map_frame::StackMapFrame;
-use tracing::{info, instrument};
+use tracing::{debug, instrument};
 
 use crate::parser::{parse_u32, parse_vec};
 
-use super::{
-    constant_pool::{ConstantPool, ConstantPoolInfo},
-    parse_u16,
-};
+use super::{constant_pool::ConstantPool, parse_u16};
 
 mod annotation;
 mod bootstrap_method;
@@ -80,9 +77,8 @@ impl Attribute {
         let name_index = parse_u16(c) as usize;
         c.seek_relative(4).unwrap();
 
-        info!("parsing attribute {name_index}");
         let text = Attribute::get_text(constant_pool, name_index);
-        info!("parsing attribute {text}");
+        debug!("parsing attribute {text}");
 
         match text.as_str() {
             "Code" => Self::code(c, constant_pool),
@@ -104,18 +100,9 @@ impl Attribute {
     }
 
     fn get_text(constant_pool: &ConstantPool, name_index: usize) -> String {
-        let pool_info = constant_pool
-            .infos
-            .get(name_index)
-            .unwrap_or_else(|| panic!("no constant pool entry found for {name_index}"));
-        if let ConstantPoolInfo::Utf { text } = pool_info {
-            text.to_string()
-        } else {
-            panic!(
-                "attribute_name_index must refer to Utf8 entry in constant pool, is {:?}",
-                pool_info
-            );
-        }
+        constant_pool
+            .utf8(name_index)
+            .unwrap_or_else(|| panic!("no constant pool utf8 entry found for {name_index}"))
     }
 
     pub fn attributes(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Vec<Self> {

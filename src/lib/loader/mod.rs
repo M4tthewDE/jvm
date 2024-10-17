@@ -27,9 +27,10 @@ impl ClassLoader {
 
         info!("Loading class {name:?}");
 
-        let data = self.class_path.find(package, name).expect(&format!(
-            "unable to find class {package}.{name} in classpath"
-        ));
+        let data = self
+            .class_path
+            .find(package, name)
+            .unwrap_or_else(|| panic!("unable to find class {package}.{name} in classpath"));
         let class = ClassFile::new(&data);
         self.classes.insert(key(package, name), class.clone());
     }

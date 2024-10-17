@@ -22,8 +22,7 @@ pub struct ClassRef {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConstantPool {
-    // TODO: does this need to be pub?
-    pub infos: Vec<ConstantPoolInfo>,
+    infos: Vec<ConstantPoolInfo>,
 }
 
 impl ConstantPool {
@@ -39,7 +38,7 @@ impl ConstantPool {
     }
 
     pub fn utf8(&self, index: usize) -> Option<String> {
-        if let ConstantPoolInfo::Utf { text } = self.infos.get(index).unwrap() {
+        if let ConstantPoolInfo::Utf { text } = self.infos.get(index)? {
             Some(text.to_string())
         } else {
             None
