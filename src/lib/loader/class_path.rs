@@ -55,7 +55,6 @@ impl ClassPath {
 
         let data = match archive.by_name(&file_path) {
             Ok(mut f) => {
-                dbg!(f.name());
                 let mut data = Vec::new();
                 f.read_to_end(&mut data).unwrap();
                 Some(data)

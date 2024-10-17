@@ -28,15 +28,23 @@ impl Annotation {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ElementValue {}
+enum ElementValue {
+    String { const_value_index: u16 },
+    Boolean { const_value_index: u16 },
+}
+
 impl ElementValue {
     fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
         let tag = parse_u8(c) as char;
 
         match tag {
+            'Z' => ElementValue::Boolean {
+                const_value_index: parse_u16(c),
+            },
+            's' => ElementValue::String {
+                const_value_index: parse_u16(c),
+            },
             _ => panic!("Unknown element value tag {tag}"),
         }
-
-        Self {}
     }
 }

@@ -1,6 +1,12 @@
 use std::io::{Cursor, Seek};
 
 use annotation::Annotation;
+use bootstrap_method::BootstrapMethod;
+use exception::Exception;
+use inner_class::InnerClass;
+use local_variable::{LocalVariable, LocalVariableType};
+use stack_map_frame::StackMapFrame;
+use tracing::{info, instrument};
 
 use crate::parser::{parse_u32, parse_vec};
 
@@ -10,6 +16,11 @@ use super::{
 };
 
 mod annotation;
+mod bootstrap_method;
+pub mod exception;
+mod inner_class;
+mod local_variable;
+mod stack_map_frame;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineNumberTableEntry {
@@ -32,6 +43,7 @@ pub enum Attribute {
         max_stacks: u16,
         max_locals: u16,
         code: Vec<u8>,
+        exceptions: Vec<Exception>,
         attributes: Vec<Attribute>,
     },
     LineNumberTable {
@@ -50,26 +62,65 @@ pub enum Attribute {
     LocalVariableTable {
         local_variable_table: Vec<LocalVariable>,
     },
+    LocalVariableTypeTable {
+        local_variable_type_table: Vec<LocalVariableType>,
+    },
+    StackMapTable {
+        entries: Vec<StackMapFrame>,
+    },
+    Exceptions {
+        exception_index_table: Vec<u16>,
+    },
+    Signature {
+        signature_index: u16,
+    },
+    Deprecated,
+    NestMembers {
+        classes: Vec<u16>,
+    },
+    BootstrapMethods {
+        bootstrap_methods: Vec<BootstrapMethod>,
+    },
+
+    InnerClasses {
+        classes: Vec<InnerClass>,
+    },
 }
 
 impl Attribute {
+    #[instrument(skip_all, name = "attribute")]
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Attribute {
         let name_index = parse_u16(c) as usize;
         c.seek_relative(4).unwrap();
 
-        match Attribute::get_text(constant_pool, name_index).as_str() {
+        info!("parsing attribute {name_index}");
+        let text = Attribute::get_text(constant_pool, name_index);
+        info!("parsing attribute {text}");
+
+        match text.as_str() {
             "Code" => Attribute::code(c, constant_pool),
             "LineNumberTable" => Attribute::line_number_table(c),
             "SourceFile" => Attribute::source_file(c),
             "ConstantValue" => Attribute::constant_value(c),
             "RuntimeVisibleAnnotations" => Attribute::runtime_visible_annotations(c),
             "LocalVariableTable" => Attribute::local_variable_table(c),
+            "StackMapTable" => Attribute::stack_map_table(c),
+            "Exceptions" => Attribute::exceptions(c),
+            "LocalVariableTypeTable" => Attribute::local_variable_type_table(c),
+            "Signature" => Attribute::signature(c),
+            "Deprecated" => Attribute::Deprecated,
+            "NestMembers" => Attribute::nest_members(c),
+            "BootstrapMethods" => Attribute::bootstrap_methods(c),
+            "InnerClasses" => Attribute::inner_classes(c),
             i => panic!("unknown attribute {i}"),
         }
     }
 
     fn get_text(constant_pool: &ConstantPool, name_index: usize) -> String {
-        let pool_info = constant_pool.infos.get(name_index).unwrap();
+        let pool_info = constant_pool
+            .infos
+            .get(name_index)
+            .expect(&format!("no constant pool entry found for {name_index}"));
         if let ConstantPoolInfo::Utf { text } = pool_info {
             text.to_string()
         } else {
@@ -113,13 +164,17 @@ impl Attribute {
         let code = parse_vec(c, code_length);
 
         let exception_table_length = parse_u16(c);
-        assert_eq!(exception_table_length, 0, "exceptions are not implemented");
+        let mut exceptions = Vec::new();
+        for _ in 0..exception_table_length {
+            exceptions.push(Exception::new(c));
+        }
 
         Attribute::Code {
             max_stacks,
             max_locals,
             code,
             attributes: Attribute::attributes(c, constant_pool),
+            exceptions,
         }
     }
 
@@ -152,25 +207,75 @@ impl Attribute {
             local_variable_table,
         }
     }
-}
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LocalVariable {
-    start_pc: u16,
-    length: u16,
-    name_index: u16,
-    descriptor_index: u16,
-    index: u16,
-}
+    fn stack_map_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+        let number_of_entries = parse_u16(c);
 
-impl LocalVariable {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        Self {
-            start_pc: parse_u16(c),
-            length: parse_u16(c),
-            name_index: parse_u16(c),
-            descriptor_index: parse_u16(c),
-            index: parse_u16(c),
+        let mut entries = Vec::new();
+        for _ in 0..number_of_entries {
+            entries.push(StackMapFrame::new(c));
         }
+
+        Attribute::StackMapTable { entries }
+    }
+
+    fn exceptions(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let number_of_exceptions = parse_u16(c);
+
+        let mut exception_index_table = Vec::new();
+        for _ in 0..number_of_exceptions {
+            exception_index_table.push(parse_u16(c));
+        }
+
+        Attribute::Exceptions {
+            exception_index_table,
+        }
+    }
+
+    fn local_variable_type_table(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let mut local_variable_type_table = Vec::new();
+        for _ in 0..parse_u16(c) {
+            local_variable_type_table.push(LocalVariableType::new(c));
+        }
+
+        Self::LocalVariableTypeTable {
+            local_variable_type_table,
+        }
+    }
+
+    fn signature(c: &mut Cursor<&Vec<u8>>) -> Self {
+        Self::Signature {
+            signature_index: parse_u16(c),
+        }
+    }
+
+    fn nest_members(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let number_of_classes = parse_u16(c) as usize;
+        let mut classes = Vec::with_capacity(number_of_classes);
+        for _ in 0..number_of_classes {
+            classes.push(parse_u16(c));
+        }
+
+        Self::NestMembers { classes }
+    }
+
+    fn bootstrap_methods(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let num_bootstrap_methods = parse_u16(c) as usize;
+        let mut bootstrap_methods = Vec::with_capacity(num_bootstrap_methods);
+        for _ in 0..num_bootstrap_methods {
+            bootstrap_methods.push(BootstrapMethod::new(c));
+        }
+
+        Self::BootstrapMethods { bootstrap_methods }
+    }
+
+    fn inner_classes(c: &mut Cursor<&Vec<u8>>) -> Self {
+        let number_of_classes = parse_u16(c) as usize;
+        let mut classes = Vec::with_capacity(number_of_classes);
+        for _ in 0..number_of_classes {
+            classes.push(InnerClass::new(c));
+        }
+
+        Self::InnerClasses { classes }
     }
 }

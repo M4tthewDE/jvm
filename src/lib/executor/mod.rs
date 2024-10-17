@@ -5,7 +5,7 @@ use stack::Stack;
 use crate::{
     loader::ClassLoader,
     parser::{
-        attribute::Attribute,
+        attribute::{exception::Exception, Attribute},
         class::ClassFile,
         constant_pool::{ClassRef, ConstantPool},
         method::Method,
@@ -34,6 +34,7 @@ struct Code {
     max_stacks: u16,
     max_locals: u16,
     opcodes: Vec<u8>,
+    exceptions: Vec<Exception>,
     attributes: Vec<Attribute>,
 }
 
@@ -43,6 +44,7 @@ impl Code {
             max_stacks,
             max_locals,
             code,
+            exceptions,
             attributes,
         } = code_attribute
         {
@@ -50,6 +52,7 @@ impl Code {
                 max_stacks,
                 max_locals,
                 opcodes: code,
+                exceptions,
                 attributes,
             };
         }
