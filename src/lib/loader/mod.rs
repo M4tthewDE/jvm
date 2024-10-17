@@ -20,9 +20,9 @@ impl ClassLoader {
         }
     }
 
-    pub fn load(&mut self, package: &str, name: &str) {
-        if self.classes.contains_key(&key(package, name)) {
-            return;
+    pub fn load(&mut self, package: &str, name: &str) -> ClassFile {
+        if let Some(c) = self.classes.get(&key(package, name)) {
+            return c.clone();
         }
 
         info!("Loading class {name:?}");
@@ -31,8 +31,10 @@ impl ClassLoader {
             .class_path
             .find(package, name)
             .unwrap_or_else(|| panic!("unable to find class {package}.{name} in classpath"));
-        let class = ClassFile::new(&data);
+        let class = ClassFile::new(&data, package.to_string(), name.to_string());
+
         self.classes.insert(key(package, name), class.clone());
+        class
     }
 
     pub fn load_main(&mut self, package: &str, name: &str) {
@@ -43,13 +45,9 @@ impl ClassLoader {
         info!("Loading main class {name:?}");
 
         let data = self.class_path.find("", name).unwrap();
-        let class = ClassFile::new(&data);
+        let class = ClassFile::new(&data, package.to_string(), name.to_string());
         verify_main_class(&class, name);
         self.classes.insert(key(package, name), class.clone());
-    }
-
-    pub fn get(&self, package: &str, name: &str) -> Option<ClassFile> {
-        self.classes.get(&key(package, name)).cloned()
     }
 }
 

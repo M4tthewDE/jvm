@@ -1,4 +1,7 @@
-use std::io::{Cursor, Read};
+use std::{
+    fmt::Display,
+    io::{Cursor, Read},
+};
 
 use tracing::instrument;
 
@@ -8,13 +11,16 @@ use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, met
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
+    pub package: String,
+    pub name: String,
     pub constant_pool: ConstantPool,
     pub methods: Vec<Method>,
+    access_flags: Vec<AccessFlag>,
 }
 
 impl ClassFile {
     #[instrument(skip_all)]
-    pub fn new(data: &Vec<u8>) -> ClassFile {
+    pub fn new(data: &Vec<u8>, package: String, name: String) -> ClassFile {
         let mut c = Cursor::new(data);
 
         let mut magic = [0u8; 4];
@@ -28,7 +34,7 @@ impl ClassFile {
         assert!(constant_pool_count > 0);
 
         let constant_pool = ConstantPool::new(&mut c, constant_pool_count);
-        let _access_flags = AccessFlag::flags(parse_u16(&mut c));
+        let access_flags = AccessFlag::flags(parse_u16(&mut c));
         let _this_class = parse_u16(&mut c);
         let _super_class = parse_u16(&mut c);
         let interfaces_count = parse_u16(&mut c);
@@ -52,8 +58,11 @@ impl ClassFile {
         let _attributes = Attribute::attributes(&mut c, &constant_pool);
 
         ClassFile {
+            package,
+            name,
             constant_pool,
             methods,
+            access_flags,
         }
     }
 
@@ -65,6 +74,16 @@ impl ClassFile {
         }
 
         panic!("No main method found")
+    }
+
+    pub fn is_public(&self) -> bool {
+        self.access_flags.contains(&AccessFlag::Public)
+    }
+}
+
+impl Display for ClassFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.package, self.name)
     }
 }
 

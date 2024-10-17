@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use stack::Stack;
 
@@ -19,6 +19,12 @@ pub struct Class {
     class_file: ClassFile,
 }
 
+impl Display for Class {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.class_file)
+    }
+}
+
 impl Class {
     fn get_main_method(&self) -> Method {
         self.class_file.get_main_method()
@@ -26,6 +32,14 @@ impl Class {
 
     fn constant_pool(&self) -> ConstantPool {
         self.class_file.constant_pool.clone()
+    }
+
+    fn can_access(&self, class: &ClassFile) -> bool {
+        class.is_public() || class.package == self.class_file.package
+    }
+
+    fn lookup_field(&self) {
+        todo!("lookup_field")
     }
 }
 
@@ -67,43 +81,51 @@ impl Code {
 pub struct Executor {
     class_loader: ClassLoader,
     initialized_classes: HashMap<String, Class>,
+    current_class: Class,
     stack: Stack,
     pc: usize,
     current_code: Code,
 }
 
 impl Executor {
-    pub fn new(class_loader: ClassLoader) -> Self {
+    pub fn new(mut class_loader: ClassLoader, package: &str, name: &str) -> Self {
+        let current_class = Class {
+            class_file: class_loader.load(package, name),
+        };
         Self {
             class_loader,
             initialized_classes: HashMap::new(),
+            current_class,
             stack: Stack::new(),
             pc: 0,
             current_code: Code::default(),
         }
     }
 
-    fn initialize(&mut self, class_file: ClassFile, package: &str, name: &str) -> Class {
-        let class = Class { class_file };
-        self.initialized_classes
-            .insert(key(package, name), class.clone());
-
-        class
+    pub fn execute(&mut self) {
+        self.execute_main_method();
     }
 
-    pub fn execute(&mut self, package: &str, main_class: &str) {
-        let class_file = self.class_loader.get(package, main_class).unwrap();
-        self.execute_main_method(class_file, package, main_class);
-    }
-
-    fn execute_main_method(&mut self, class_file: ClassFile, package: &str, main_class: &str) {
-        let class = self.initialize(class_file, package, main_class);
+    fn execute_main_method(&mut self) {
+        let class = self.initialize(self.current_class.clone().class_file);
         let method = class.get_main_method();
 
         // TODO: add []String args, see invokestatic for reference
         self.stack.create(class.constant_pool());
         self.current_code = Code::new(method.get_code_attribute().unwrap());
         self.execute_code();
+    }
+
+    fn initialize(&mut self, class_file: ClassFile) -> Class {
+        let class = Class {
+            class_file: class_file.clone(),
+        };
+        self.initialized_classes.insert(
+            key(&class.class_file.package, &class.class_file.name),
+            class.clone(),
+        );
+
+        class
     }
 
     fn execute_code(&mut self) {
@@ -124,13 +146,22 @@ impl Executor {
 
     fn resolve_field(&mut self, field_ref_index: &Index) {
         let field_ref = self.stack.field_ref(field_ref_index);
-        self.resolve_class(&field_ref.class_ref);
-        todo!()
+        let class = self.resolve_class(&field_ref.class_ref);
+        class.lookup_field();
+
+        todo!("resolve_field");
     }
 
-    fn resolve_class(&mut self, class_ref: &ClassRef) {
-        self.class_loader.load(&class_ref.package, &class_ref.name);
-        todo!("resolve_class");
+    fn resolve_class(&mut self, class_ref: &ClassRef) -> Class {
+        let class_file = self.class_loader.load(&class_ref.package, &class_ref.name);
+        self.apply_access_control(&class_file);
+        Class { class_file }
+    }
+
+    fn apply_access_control(&self, class: &ClassFile) {
+        if !self.current_class.can_access(class) {
+            panic!("{} is not allowed to access {}, we should throw IllegalAccessError once we support exceptions", self.current_class, class);
+        }
     }
 }
 
