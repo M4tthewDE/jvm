@@ -15,9 +15,7 @@ impl Annotation {
 
         let mut element_value_pairs = Vec::new();
         for _ in 0..num_element_value_pairs {
-            let element_name_index = parse_u16(c);
-            let element_value = ElementValue::new(c);
-            element_value_pairs.push((element_name_index, element_value));
+            element_value_pairs.push((parse_u16(c), ElementValue::new(c)));
         }
 
         Self {

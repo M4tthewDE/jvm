@@ -124,7 +124,7 @@ mod tests {
     use std::{iter::zip, path::PathBuf};
 
     use crate::parser::{
-        attribute::{Attribute, LineNumberTableEntry},
+        attribute::{line_number_table_entry::LineNumberTableEntry, Attribute},
         class::AccessFlag,
         constant_pool::ConstantPoolInfo,
         method::{Method, MethodFlag},

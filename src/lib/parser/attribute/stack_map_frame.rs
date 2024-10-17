@@ -31,9 +31,7 @@ impl StackMapFrame {
         match tag {
             0..=63 => Self::SameFrame { offset_delta: tag },
             64..=127 => Self::same_locals(c, tag),
-            248..=250 => Self::Chop {
-                offset_delta: parse_u16(c),
-            },
+            248..=250 => Self::chop(c),
             252..=254 => Self::append(c, tag),
             255 => Self::full(c),
             _ => panic!("invalid stack map frame tag {tag}"),
@@ -44,6 +42,12 @@ impl StackMapFrame {
         Self::SameLocals {
             offset_delta: tag - 64,
             verification_type: VerificationType::new(c),
+        }
+    }
+
+    fn chop(c: &mut Cursor<&Vec<u8>>) -> StackMapFrame {
+        Self::Chop {
+            offset_delta: parse_u16(c),
         }
     }
 

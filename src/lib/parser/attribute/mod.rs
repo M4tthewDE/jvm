@@ -4,6 +4,7 @@ use annotation::Annotation;
 use bootstrap_method::BootstrapMethod;
 use exception::Exception;
 use inner_class::InnerClass;
+use line_number_table_entry::LineNumberTableEntry;
 use local_variable::{LocalVariable, LocalVariableType};
 use stack_map_frame::StackMapFrame;
 use tracing::{info, instrument};
@@ -19,23 +20,9 @@ mod annotation;
 mod bootstrap_method;
 pub mod exception;
 mod inner_class;
+pub mod line_number_table_entry;
 mod local_variable;
 mod stack_map_frame;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LineNumberTableEntry {
-    pub start_pc: u16,
-    pub line_number: u16,
-}
-
-impl LineNumberTableEntry {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> LineNumberTableEntry {
-        LineNumberTableEntry {
-            start_pc: parse_u16(c),
-            line_number: parse_u16(c),
-        }
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Attribute {
@@ -98,20 +85,20 @@ impl Attribute {
         info!("parsing attribute {text}");
 
         match text.as_str() {
-            "Code" => Attribute::code(c, constant_pool),
-            "LineNumberTable" => Attribute::line_number_table(c),
-            "SourceFile" => Attribute::source_file(c),
-            "ConstantValue" => Attribute::constant_value(c),
-            "RuntimeVisibleAnnotations" => Attribute::runtime_visible_annotations(c),
-            "LocalVariableTable" => Attribute::local_variable_table(c),
-            "StackMapTable" => Attribute::stack_map_table(c),
-            "Exceptions" => Attribute::exceptions(c),
-            "LocalVariableTypeTable" => Attribute::local_variable_type_table(c),
-            "Signature" => Attribute::signature(c),
-            "Deprecated" => Attribute::Deprecated,
-            "NestMembers" => Attribute::nest_members(c),
-            "BootstrapMethods" => Attribute::bootstrap_methods(c),
-            "InnerClasses" => Attribute::inner_classes(c),
+            "Code" => Self::code(c, constant_pool),
+            "LineNumberTable" => Self::line_number_table(c),
+            "SourceFile" => Self::source_file(c),
+            "ConstantValue" => Self::constant_value(c),
+            "RuntimeVisibleAnnotations" => Self::runtime_visible_annotations(c),
+            "LocalVariableTable" => Self::local_variable_table(c),
+            "StackMapTable" => Self::stack_map_table(c),
+            "Exceptions" => Self::exceptions(c),
+            "LocalVariableTypeTable" => Self::local_variable_type_table(c),
+            "Signature" => Self::signature(c),
+            "Deprecated" => Self::Deprecated,
+            "NestMembers" => Self::nest_members(c),
+            "BootstrapMethods" => Self::bootstrap_methods(c),
+            "InnerClasses" => Self::inner_classes(c),
             i => panic!("unknown attribute {i}"),
         }
     }
@@ -120,7 +107,7 @@ impl Attribute {
         let pool_info = constant_pool
             .infos
             .get(name_index)
-            .expect(&format!("no constant pool entry found for {name_index}"));
+            .unwrap_or_else(|| panic!("no constant pool entry found for {name_index}"));
         if let ConstantPoolInfo::Utf { text } = pool_info {
             text.to_string()
         } else {
@@ -131,11 +118,11 @@ impl Attribute {
         }
     }
 
-    pub fn attributes(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Vec<Attribute> {
+    pub fn attributes(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Vec<Self> {
         let attributes_count = parse_u16(c) as usize;
         let mut attributes = Vec::with_capacity(attributes_count);
         for _ in 0..attributes_count {
-            attributes.push(Attribute::new(c, constant_pool));
+            attributes.push(Self::new(c, constant_pool));
         }
         attributes
     }
@@ -146,16 +133,16 @@ impl Attribute {
         }
     }
 
-    fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+    fn line_number_table(c: &mut Cursor<&Vec<u8>>) -> Self {
         let table_length = parse_u16(c) as usize;
         let mut table = Vec::with_capacity(table_length);
         for _ in 0..table_length {
             table.push(LineNumberTableEntry::new(c));
         }
-        Attribute::LineNumberTable { table }
+        Self::LineNumberTable { table }
     }
 
-    fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Attribute {
+    fn code(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Self {
         let max_stacks = parse_u16(c);
         let max_locals = parse_u16(c);
 
@@ -169,22 +156,22 @@ impl Attribute {
             exceptions.push(Exception::new(c));
         }
 
-        Attribute::Code {
+        Self::Code {
             max_stacks,
             max_locals,
             code,
-            attributes: Attribute::attributes(c, constant_pool),
+            attributes: Self::attributes(c, constant_pool),
             exceptions,
         }
     }
 
-    fn constant_value(c: &mut Cursor<&Vec<u8>>) -> Attribute {
-        Attribute::ConstantValue {
+    fn constant_value(c: &mut Cursor<&Vec<u8>>) -> Self {
+        Self::ConstantValue {
             constant_value_index: parse_u16(c),
         }
     }
 
-    fn runtime_visible_annotations(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+    fn runtime_visible_annotations(c: &mut Cursor<&Vec<u8>>) -> Self {
         let num_annotations = parse_u16(c);
 
         let mut annotations = Vec::new();
@@ -192,10 +179,10 @@ impl Attribute {
             annotations.push(Annotation::new(c));
         }
 
-        Attribute::RuntimeVisibleAnnotations { annotations }
+        Self::RuntimeVisibleAnnotations { annotations }
     }
 
-    fn local_variable_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+    fn local_variable_table(c: &mut Cursor<&Vec<u8>>) -> Self {
         let local_variable_table_length = parse_u16(c) as usize;
 
         let mut local_variable_table = Vec::with_capacity(local_variable_table_length);
@@ -203,12 +190,12 @@ impl Attribute {
             local_variable_table.push(LocalVariable::new(c));
         }
 
-        Attribute::LocalVariableTable {
+        Self::LocalVariableTable {
             local_variable_table,
         }
     }
 
-    fn stack_map_table(c: &mut Cursor<&Vec<u8>>) -> Attribute {
+    fn stack_map_table(c: &mut Cursor<&Vec<u8>>) -> Self {
         let number_of_entries = parse_u16(c);
 
         let mut entries = Vec::new();
@@ -216,7 +203,7 @@ impl Attribute {
             entries.push(StackMapFrame::new(c));
         }
 
-        Attribute::StackMapTable { entries }
+        Self::StackMapTable { entries }
     }
 
     fn exceptions(c: &mut Cursor<&Vec<u8>>) -> Self {
@@ -227,7 +214,7 @@ impl Attribute {
             exception_index_table.push(parse_u16(c));
         }
 
-        Attribute::Exceptions {
+        Self::Exceptions {
             exception_index_table,
         }
     }

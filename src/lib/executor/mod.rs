@@ -130,7 +130,7 @@ impl Executor {
 
     fn resolve_class(&mut self, class_ref: &ClassRef) {
         self.class_loader.load(&class_ref.package, &class_ref.name);
-        todo!()
+        todo!("resolve_class");
     }
 }
 
