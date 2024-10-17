@@ -89,9 +89,8 @@ impl ConstantPool {
     }
 }
 
-// TODO: does this need to be pub?
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ConstantPoolInfo {
+enum ConstantPoolInfo {
     Reserved,
     FieldRef {
         class_index: u16,
@@ -133,7 +132,7 @@ pub enum ConstantPoolInfo {
 }
 
 impl ConstantPoolInfo {
-    pub fn new(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+    fn new(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         let tag = parse_u8(c);
 
         match tag {
