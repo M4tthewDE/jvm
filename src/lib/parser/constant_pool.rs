@@ -4,14 +4,14 @@ use super::{parse_i32, parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
-    name: String,
-    descriptor: String,
+    pub name: String,
+    pub descriptor: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FieldRef {
     pub class_ref: ClassRef,
-    name_and_type: NameAndType,
+    pub name_and_type: NameAndType,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

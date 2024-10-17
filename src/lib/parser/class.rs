@@ -15,6 +15,7 @@ pub struct ClassFile {
     pub name: String,
     pub constant_pool: ConstantPool,
     pub methods: Vec<Method>,
+    fields: Vec<Field>,
     access_flags: Vec<AccessFlag>,
 }
 
@@ -62,6 +63,7 @@ impl ClassFile {
             name,
             constant_pool,
             methods,
+            fields,
             access_flags,
         }
     }
@@ -78,6 +80,18 @@ impl ClassFile {
 
     pub fn is_public(&self) -> bool {
         self.access_flags.contains(&AccessFlag::Public)
+    }
+
+    pub fn get_field(&self, name: String, descriptor: String) -> Option<Field> {
+        for field in &self.fields {
+            if field.name(&self.constant_pool) == name
+                && field.descriptor(&self.constant_pool) == descriptor
+            {
+                return Some(field.clone());
+            }
+        }
+
+        None
     }
 }
 

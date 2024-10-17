@@ -7,7 +7,7 @@ use crate::{
     parser::{
         attribute::{exception::Exception, Attribute},
         class::ClassFile,
-        constant_pool::{ClassRef, ConstantPool, Index},
+        constant_pool::{ClassRef, ConstantPool, FieldRef, Index},
         method::Method,
     },
 };
@@ -38,7 +38,25 @@ impl Class {
         class.is_public() || class.package == self.class_file.package
     }
 
-    fn lookup_field(&self) {
+    fn lookup_field(&self, field_ref: &FieldRef) {
+        let field = self
+            .class_file
+            .get_field(
+                field_ref.name_and_type.name.clone(),
+                field_ref.name_and_type.descriptor.clone(),
+            )
+            .unwrap_or_else(|| panic!("field {field_ref:?} not found"));
+
+        /*
+         *
+         * On successful resolution of the field, the class or interface that
+         * declared the resolved field is initialized if that class or interface
+         * has not already been initialized (§5.5).
+         * The value of the class or interface field is fetched and pushed onto
+         * the operand stack.
+         *
+         */
+
         todo!("lookup_field")
     }
 }
@@ -147,7 +165,7 @@ impl Executor {
     fn resolve_field(&mut self, field_ref_index: &Index) {
         let field_ref = self.stack.field_ref(field_ref_index);
         let class = self.resolve_class(&field_ref.class_ref);
-        class.lookup_field();
+        class.lookup_field(&field_ref);
 
         todo!("resolve_field");
     }
