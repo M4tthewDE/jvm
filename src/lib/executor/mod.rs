@@ -31,11 +31,11 @@ impl Class {
 
 #[derive(Debug, Clone, Default)]
 struct Code {
-    max_stacks: u16,
-    max_locals: u16,
+    _max_stacks: u16,
+    _max_locals: u16,
     opcodes: Vec<u8>,
-    exceptions: Vec<Exception>,
-    attributes: Vec<Attribute>,
+    _exceptions: Vec<Exception>,
+    _attributes: Vec<Attribute>,
 }
 
 impl Code {
@@ -49,11 +49,11 @@ impl Code {
         } = code_attribute
         {
             return Self {
-                max_stacks,
-                max_locals,
+                _max_stacks: max_stacks,
+                _max_locals: max_locals,
                 opcodes: code,
-                exceptions,
-                attributes,
+                _exceptions: exceptions,
+                _attributes: attributes,
             };
         }
         panic!("can't construct Code out of {:?}", code_attribute);

@@ -8,15 +8,8 @@ use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, met
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
-    pub minor_version: u16,
-    pub major_version: u16,
     pub constant_pool: ConstantPool,
-    access_flags: Vec<AccessFlag>,
-    pub this_class: u16,
-    pub super_class: u16,
-    pub fields: Vec<Field>,
     pub methods: Vec<Method>,
-    pub attributes: Vec<Attribute>,
 }
 
 impl ClassFile {
@@ -28,16 +21,16 @@ impl ClassFile {
         c.read_exact(&mut magic).unwrap();
         assert_eq!(magic, [0xCA, 0xFE, 0xBA, 0xBE]);
 
-        let minor_version = parse_u16(&mut c);
-        let major_version = parse_u16(&mut c);
+        let _minor_version = parse_u16(&mut c);
+        let _major_version = parse_u16(&mut c);
 
         let constant_pool_count = parse_u16(&mut c) as usize;
         assert!(constant_pool_count > 0);
 
         let constant_pool = ConstantPool::new(&mut c, constant_pool_count);
-        let access_flags = AccessFlag::flags(parse_u16(&mut c));
-        let this_class = parse_u16(&mut c);
-        let super_class = parse_u16(&mut c);
+        let _access_flags = AccessFlag::flags(parse_u16(&mut c));
+        let _this_class = parse_u16(&mut c);
+        let _super_class = parse_u16(&mut c);
         let interfaces_count = parse_u16(&mut c);
         assert_eq!(interfaces_count, 0, "not implemented");
 
@@ -56,18 +49,11 @@ impl ClassFile {
             methods.push(method);
         }
 
-        let attributes = Attribute::attributes(&mut c, &constant_pool);
+        let _attributes = Attribute::attributes(&mut c, &constant_pool);
 
         ClassFile {
-            minor_version,
-            major_version,
             constant_pool,
-            access_flags,
-            this_class,
-            super_class,
-            fields,
             methods,
-            attributes,
         }
     }
 

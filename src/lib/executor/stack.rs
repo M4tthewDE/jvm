@@ -5,13 +5,13 @@ struct Word {}
 
 #[derive(Debug)]
 struct Frame {
-    local_variables: Vec<Word>,
+    _local_variables: Vec<Word>,
     constant_pool: ConstantPool,
 }
 impl Frame {
     fn new(constant_pool: ConstantPool) -> Self {
         Self {
-            local_variables: Vec::new(),
+            _local_variables: Vec::new(),
             constant_pool,
         }
     }
@@ -24,14 +24,14 @@ impl Frame {
 #[derive(Debug)]
 pub struct Stack {
     frames: Vec<Frame>,
-    operand_stack: Vec<Word>,
+    _operand_stack: Vec<Word>,
 }
 
 impl Stack {
     pub fn new() -> Self {
         Self {
             frames: Vec::new(),
-            operand_stack: Vec::new(),
+            _operand_stack: Vec::new(),
         }
     }
 

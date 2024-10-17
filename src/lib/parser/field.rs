@@ -4,24 +4,19 @@ use super::{attribute::Attribute, constant_pool::ConstantPool, parse_u16};
 
 #[derive(Clone, Debug)]
 pub struct Field {
-    pub access_flags: Vec<FieldFlag>,
-    pub name_index: u16,
-    pub descriptor_index: u16,
-    pub attributes: Vec<Attribute>,
+    _access_flags: Vec<FieldFlag>,
+    _name_index: u16,
+    _descriptor_index: u16,
+    _attributes: Vec<Attribute>,
 }
 
 impl Field {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Self {
-        let access_flags = FieldFlag::flags(parse_u16(c));
-        let name_index = parse_u16(c);
-        let descriptor_index = parse_u16(c);
-        let attributes = Attribute::attributes(c, constant_pool);
-
         Self {
-            access_flags,
-            name_index,
-            descriptor_index,
-            attributes,
+            _access_flags: FieldFlag::flags(parse_u16(c)),
+            _name_index: parse_u16(c),
+            _descriptor_index: parse_u16(c),
+            _attributes: Attribute::attributes(c, constant_pool),
         }
     }
 }
