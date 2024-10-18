@@ -18,16 +18,12 @@ pub fn run(class_path: Vec<PathBuf>, main_class: ClassName) {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct ClassName {
-    name: String,
+    pub name: String,
 }
 
 impl ClassName {
     pub fn new(name: String) -> Self {
         Self { name }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
     }
 }
 
@@ -39,16 +35,12 @@ impl Display for ClassName {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct Package {
-    name: String,
+    pub name: String,
 }
 
 impl Package {
     pub fn new(name: String) -> Self {
         Self { name }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
     }
 }
 
