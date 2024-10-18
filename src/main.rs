@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use jvm::ClassName;
+use jvm::{ClassIdentifier, ClassName, Package};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -18,5 +18,7 @@ struct Cli {
 fn main() {
     tracing_subscriber::fmt().init();
     let cli = Cli::parse();
-    jvm::run(cli.classpath.unwrap(), ClassName::new(cli.main_class))
+    let package = Package::default();
+    let name = ClassName::new(cli.main_class);
+    jvm::run(cli.classpath.unwrap(), ClassIdentifier::new(package, name))
 }
