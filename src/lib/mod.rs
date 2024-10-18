@@ -3,7 +3,8 @@ use std::{fmt::Display, path::PathBuf};
 use executor::Executor;
 use loader::{class_path::ClassPath, ClassLoader};
 
-mod executor;
+// TODO: restrict after loader is in executor
+pub mod executor;
 mod loader;
 mod parser;
 

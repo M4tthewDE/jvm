@@ -7,20 +7,15 @@ use tracing::instrument;
 
 use crate::{parser::parse_u16, ClassIdentifier};
 
-use super::{
-    attribute::Attribute,
-    constant_pool::{ConstantPool, FieldRef, Index, MethodRef, NameAndType},
-    field::Field,
-    method::Method,
-};
+use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, method::Method};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
     pub class_identifier: ClassIdentifier,
-    constant_pool: ConstantPool,
-    methods: Vec<Method>,
-    fields: Vec<Field>,
-    access_flags: Vec<AccessFlag>,
+    pub constant_pool: ConstantPool,
+    pub methods: Vec<Method>,
+    pub fields: Vec<Field>,
+    pub access_flags: Vec<AccessFlag>,
 }
 
 impl ClassFile {
@@ -70,72 +65,6 @@ impl ClassFile {
             access_flags,
         }
     }
-
-    pub fn get_main_method(&self) -> Method {
-        for method in &self.methods {
-            if method.is_main(&self.constant_pool) {
-                return method.clone();
-            }
-        }
-
-        panic!("No main method found")
-    }
-
-    pub fn is_public(&self) -> bool {
-        self.access_flags.contains(&AccessFlag::Public)
-    }
-
-    pub fn get_field(&self, name_and_type: &NameAndType) -> Option<Field> {
-        for field in &self.fields {
-            if field.name(&self.constant_pool) == name_and_type.name
-                && field.descriptor(&self.constant_pool) == name_and_type.descriptor
-            {
-                return Some(field.clone());
-            }
-        }
-
-        None
-    }
-
-    pub fn method(&self, name_and_type: &NameAndType) -> Option<Method> {
-        for method in &self.methods {
-            if method.descriptor(&self.constant_pool) == name_and_type.descriptor
-                && method.name(&self.constant_pool) == name_and_type.name
-            {
-                return Some(method.clone());
-            }
-        }
-
-        None
-    }
-
-    pub fn has_main(&self) -> bool {
-        for method in &self.methods {
-            if method.is_main(&self.constant_pool) {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    pub fn field_ref(&self, index: &Index) -> Option<FieldRef> {
-        self.constant_pool.field_ref(index)
-    }
-
-    pub fn clinit_method(&self) -> Option<Method> {
-        for method in &self.methods {
-            if method.is_clinit(&self.constant_pool) {
-                return Some(method.clone());
-            }
-        }
-
-        None
-    }
-
-    pub fn method_ref(&self, method_index: &Index) -> Option<MethodRef> {
-        self.constant_pool.method_ref(method_index)
-    }
 }
 
 impl Display for ClassFile {
@@ -145,7 +74,7 @@ impl Display for ClassFile {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-enum AccessFlag {
+pub enum AccessFlag {
     Public,
     Final,
     Super,

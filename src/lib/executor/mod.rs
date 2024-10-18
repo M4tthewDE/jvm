@@ -2,19 +2,20 @@ use std::collections::HashMap;
 
 use class::Class;
 use code::Code;
+use method::Method;
 use stack::Stack;
 
 use crate::{
     loader::ClassLoader,
-    parser::{
-        constant_pool::{ClassRef, Index},
-        method::Method,
-    },
+    parser::constant_pool::{ClassRef, Index},
     ClassIdentifier, ClassName, Package,
 };
 
-mod class;
+// TODO: restrict after loader is in executor
+pub mod class;
 mod code;
+mod field;
+mod method;
 mod stack;
 
 pub struct Executor {
@@ -37,7 +38,7 @@ impl Executor {
     }
 
     pub fn execute(&mut self, class_identifier: ClassIdentifier) {
-        let class = Class::new(self.class_loader.load(class_identifier));
+        let class = self.class_loader.load(class_identifier);
         self.execute_main_method(class);
     }
 
@@ -47,8 +48,8 @@ impl Executor {
 
     fn execute_main_method(&mut self, class: Class) {
         self.initialize(class.clone());
-        let class = self.get_class(&class.identifier()).unwrap();
-        let method = class.get_main_method();
+        let class = self.get_class(&class.identifier).unwrap();
+        let method = class.main_method();
 
         // TODO: add []String args, see invokestatic for reference
         let code = Code::new(method.get_code_attribute().unwrap());
@@ -64,21 +65,22 @@ impl Executor {
     }
 
     fn initialize(&mut self, class: Class) {
-        if self.initialized_classes.contains_key(&class.identifier()) {
+        if self.initialized_classes.contains_key(&class.identifier) {
             return;
         }
 
-        if self.class_being_initialized == class.identifier() {
+        if self.class_being_initialized == class.identifier {
             return;
         }
 
-        self.class_being_initialized = class.identifier();
+        self.class_being_initialized = class.identifier.clone();
 
         if let Some(clinit) = &class.clinit_method() {
             self.execute_clinit(class.clone(), clinit);
         }
 
-        self.initialized_classes.insert(class.identifier(), class);
+        self.initialized_classes
+            .insert(class.identifier.clone(), class);
     }
 
     fn execute_code(&mut self) {
@@ -98,10 +100,9 @@ impl Executor {
         let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
         self.pc += 2;
         let method_ref = self.stack.method_ref(&method_index);
-        let class_file = self
+        let class = self
             .class_loader
             .load(method_ref.class.class_identifier.clone());
-        let class = Class::new(class_file);
         self.initialize(class.clone());
         if class.is_native(&method_ref) {
             todo!("implement invoke_static for native methods");
@@ -123,7 +124,7 @@ impl Executor {
         let field_ref = self.stack.field_ref(field_ref_index);
         let class = self.resolve_class(&field_ref.class_ref);
         let _field = class
-            .lookup_field(&field_ref)
+            .field(&field_ref.name_and_type)
             .unwrap_or_else(|| panic!("field {field_ref:?} not found"));
         self.initialize(class);
         /*
@@ -141,12 +142,12 @@ impl Executor {
     }
 
     fn resolve_class(&mut self, class_ref: &ClassRef) -> Class {
-        let class_file = self.class_loader.load(class_ref.class_identifier.clone());
-        if !self.stack.can_access(&class_file) {
-            panic!("{:?} is not allowed to access {class_file}, we should throw IllegalAccessError once we support exceptions", self.stack);
+        let class = self.class_loader.load(class_ref.class_identifier.clone());
+        if !self.stack.can_access(&class) {
+            panic!("{:?} is not allowed to access {class}, we should throw IllegalAccessError once we support exceptions", self.stack);
         }
 
-        Class::new(class_file)
+        class
     }
 }
 

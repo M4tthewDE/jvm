@@ -2,62 +2,98 @@ use std::fmt::Display;
 
 use crate::{
     parser::{
-        class::ClassFile,
-        constant_pool::{FieldRef, Index, MethodRef},
-        field::Field,
-        method::Method,
+        class::{AccessFlag, ClassFile},
+        constant_pool::NameAndType,
+        descriptor::MethodDescriptor,
     },
     ClassIdentifier, Package,
 };
 
+use super::{field::Field, method::Method};
+
 #[derive(Debug, Clone)]
 pub struct Class {
-    class_file: ClassFile,
+    pub identifier: ClassIdentifier,
+    methods: Vec<Method>,
+    fields: Vec<Field>,
+    access_flags: Vec<AccessFlag>,
 }
 
 impl Display for Class {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.class_file)
+        write!(f, "{}", self.identifier)
     }
 }
 
 impl Class {
     pub fn new(class_file: ClassFile) -> Self {
-        Self { class_file }
+        Self {
+            identifier: class_file.class_identifier,
+            fields: Field::fields(class_file.fields, &class_file.constant_pool),
+            methods: Method::methods(class_file.methods, &class_file.constant_pool),
+            access_flags: class_file.access_flags.clone(),
+        }
     }
 
     pub fn package(&self) -> Package {
-        self.class_file.class_identifier.package.clone()
+        self.identifier.package.clone()
     }
 
-    pub fn get_main_method(&self) -> Method {
-        self.class_file.get_main_method()
+    pub fn is_public(&self) -> bool {
+        self.access_flags.contains(&AccessFlag::Public)
     }
 
-    pub fn field_ref(&self, index: &Index) -> Option<FieldRef> {
-        self.class_file.field_ref(index)
+    pub fn main_method(&self) -> Option<Method> {
+        for method in &self.methods {
+            if method.is_main() {
+                return Some(method.clone());
+            }
+        }
+
+        None
     }
 
-    pub fn lookup_field(&self, field_ref: &FieldRef) -> Option<Field> {
-        self.class_file.get_field(&field_ref.name_and_type)
+    pub fn field(&self, name_and_type: &NameAndType) -> Option<Field> {
+        for field in &self.fields {
+            if field.name == name_and_type.name && field.descriptor == name_and_type.descriptor {
+                return Some(field.clone());
+            }
+        }
+
+        None
     }
 
     pub fn clinit_method(&self) -> Option<Method> {
-        self.class_file.clinit_method()
+        for method in &self.methods {
+            if method.is_clinit() {
+                return Some(method.clone());
+            }
+        }
+
+        None
     }
 
-    pub fn method_ref(&self, method_index: &Index) -> Option<MethodRef> {
-        self.class_file.method_ref(method_index)
+    pub fn is_native(&self, name: &str, descriptor: &MethodDescriptor) -> bool {
+        self.method(name, descriptor).unwrap().is_native()
     }
 
-    pub fn is_native(&self, method_ref: &MethodRef) -> bool {
-        self.class_file
-            .method(&method_ref.name_and_type)
-            .unwrap()
-            .is_native()
+    pub fn has_main(&self) -> bool {
+        for method in &self.methods {
+            if method.is_main() {
+                return true;
+            }
+        }
+
+        false
     }
 
-    pub fn identifier(&self) -> ClassIdentifier {
-        self.class_file.class_identifier.clone()
+    fn method(&self, name: &str, descriptor: &MethodDescriptor) -> Option<Method> {
+        for method in &self.methods {
+            if method.descriptor == *descriptor && method.name == name {
+                return Some(method.clone());
+            }
+        }
+
+        None
     }
 }
