@@ -7,14 +7,19 @@ use tracing::instrument;
 
 use crate::parser::parse_u16;
 
-use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, method::Method};
+use super::{
+    attribute::Attribute,
+    constant_pool::{ConstantPool, FieldRef, Index, NameAndType},
+    field::Field,
+    method::Method,
+};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
     pub package: String,
     pub name: String,
-    pub constant_pool: ConstantPool,
-    pub methods: Vec<Method>,
+    constant_pool: ConstantPool,
+    methods: Vec<Method>,
     fields: Vec<Field>,
     access_flags: Vec<AccessFlag>,
 }
@@ -82,12 +87,36 @@ impl ClassFile {
         self.access_flags.contains(&AccessFlag::Public)
     }
 
-    pub fn get_field(&self, name: String, descriptor: String) -> Option<Field> {
+    pub fn get_field(&self, name_and_type: &NameAndType) -> Option<Field> {
         for field in &self.fields {
-            if field.name(&self.constant_pool) == name
-                && field.descriptor(&self.constant_pool) == descriptor
+            if field.name(&self.constant_pool) == name_and_type.name
+                && field.descriptor(&self.constant_pool) == name_and_type.descriptor
             {
                 return Some(field.clone());
+            }
+        }
+
+        None
+    }
+
+    pub fn has_main(&self) -> bool {
+        for method in &self.methods {
+            if method.is_main(&self.constant_pool) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn field_ref(&self, index: &Index) -> Option<FieldRef> {
+        self.constant_pool.field_ref(index)
+    }
+
+    pub fn clinit_method(&self) -> Option<Method> {
+        for method in &self.methods {
+            if method.is_clinit(&self.constant_pool) {
+                return Some(method.clone());
             }
         }
 

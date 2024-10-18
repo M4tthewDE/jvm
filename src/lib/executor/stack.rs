@@ -1,4 +1,9 @@
-use crate::parser::constant_pool::{ConstantPool, FieldRef, Index};
+use crate::parser::{
+    class::ClassFile,
+    constant_pool::{FieldRef, Index},
+};
+
+use super::{class::Class, code::Code};
 
 #[derive(Debug)]
 struct Word {}
@@ -6,18 +11,20 @@ struct Word {}
 #[derive(Debug)]
 struct Frame {
     _local_variables: Vec<Word>,
-    constant_pool: ConstantPool,
+    class: Class,
+    code: Code,
 }
 impl Frame {
-    fn new(constant_pool: ConstantPool) -> Self {
+    fn new(class: Class, code: Code) -> Self {
         Self {
             _local_variables: Vec::new(),
-            constant_pool,
+            class,
+            code,
         }
     }
 
     fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
-        self.constant_pool.field_ref(field_ref_index).unwrap()
+        self.class.field_ref(field_ref_index).unwrap()
     }
 }
 
@@ -35,11 +42,23 @@ impl Stack {
         }
     }
 
-    pub fn create(&mut self, constant_pool: ConstantPool) {
-        self.frames.push(Frame::new(constant_pool))
+    fn current_frame(&self) -> &Frame {
+        self.frames.last().unwrap()
+    }
+
+    pub fn create(&mut self, class: Class, code: Code) {
+        self.frames.push(Frame::new(class, code))
     }
 
     pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
-        self.frames.last().unwrap().field_ref(field_ref_index)
+        self.current_frame().field_ref(field_ref_index)
+    }
+
+    pub fn can_access(&self, class: &ClassFile) -> bool {
+        class.is_public() || class.package == self.current_frame().class.package()
+    }
+
+    pub fn get_opcode(&self, i: usize) -> u8 {
+        self.current_frame().code.get_opcode(i)
     }
 }

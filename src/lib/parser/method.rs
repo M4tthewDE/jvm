@@ -5,7 +5,7 @@ use tracing::instrument;
 use super::{
     attribute::Attribute,
     constant_pool::{ConstantPool, Index},
-    descriptor::{FieldType, MethodDescriptor},
+    descriptor::{FieldType, MethodDescriptor, ReturnDescriptor},
     parse_u16,
 };
 
@@ -44,16 +44,18 @@ impl Method {
         cp.utf8(&self.name_index).unwrap()
     }
 
+    fn return_type(&self, cp: &ConstantPool) -> ReturnDescriptor {
+        MethodDescriptor::new(&cp.utf8(&self.descriptor_index).unwrap()).return_descriptor
+    }
+
     fn has_main_args(&self, cp: &ConstantPool) -> bool {
         let descriptor = MethodDescriptor::new(&cp.utf8(&self.descriptor_index).unwrap());
         let main_parameters = vec![FieldType::Array(Box::new(FieldType::Class(
             "java/lang/String".to_string(),
         )))];
 
-        matches!(
-            descriptor.return_descriptor,
-            crate::parser::descriptor::ReturnDescriptor::Void
-        ) && descriptor.parameters == main_parameters
+        matches!(descriptor.return_descriptor, ReturnDescriptor::Void)
+            && descriptor.parameters == main_parameters
     }
 
     pub fn get_code_attribute(&self) -> Option<Attribute> {
@@ -64,6 +66,11 @@ impl Method {
         }
 
         None
+    }
+
+    pub fn is_clinit(&self, cp: &ConstantPool) -> bool {
+        cp.utf8(&self.name_index).unwrap_or_default() == "<clinit>"
+            && self.return_type(cp) == ReturnDescriptor::Void
     }
 }
 

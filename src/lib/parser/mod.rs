@@ -4,7 +4,7 @@ pub mod attribute;
 pub mod class;
 pub mod constant_pool;
 pub mod descriptor;
-mod field;
+pub mod field;
 pub mod method;
 
 fn parse_u8(c: &mut Cursor<&Vec<u8>>) -> u8 {

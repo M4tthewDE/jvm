@@ -46,21 +46,13 @@ impl ClassLoader {
 
         let data = self.class_path.find("", name).unwrap();
         let class = ClassFile::new(&data, package.to_string(), name.to_string());
-        verify_main_class(&class, name);
+        if !class.has_main() {
+            panic!("No main method in class {name}");
+        }
         self.classes.insert(key(package, name), class.clone());
     }
 }
 
 fn key(package: &str, name: &str) -> String {
     format!("{package}.{name}")
-}
-
-fn verify_main_class(class: &ClassFile, name: &str) {
-    for method in &class.methods {
-        if method.is_main(&class.constant_pool) {
-            return;
-        }
-    }
-
-    panic!("No main method in class {name}");
 }
