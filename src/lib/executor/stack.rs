@@ -63,7 +63,7 @@ impl Stack {
     }
 
     pub fn can_access(&self, class: &ClassFile) -> bool {
-        class.is_public() || class.package == self.current_frame().class.package()
+        class.is_public() || class.class_identifier.package == self.current_frame().class.package()
     }
 
     pub fn get_opcode(&self, i: usize) -> u8 {

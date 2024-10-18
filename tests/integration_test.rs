@@ -12,7 +12,7 @@ fn test_main() {
 }
 
 #[test]
-#[should_panic(expected = "No main method in class MainNoMain")]
+#[should_panic(expected = "No main method in class .MainNoMain")]
 fn test_main_no_main() {
     jvm::run(
         vec![PathBuf::from("testdata/")],

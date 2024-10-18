@@ -7,7 +7,7 @@ use crate::{
         field::Field,
         method::Method,
     },
-    ClassName, Package,
+    ClassIdentifier, Package,
 };
 
 #[derive(Debug, Clone)]
@@ -27,11 +27,7 @@ impl Class {
     }
 
     pub fn package(&self) -> Package {
-        self.class_file.package.clone()
-    }
-
-    pub fn name(&self) -> ClassName {
-        self.class_file.name.clone()
+        self.class_file.class_identifier.package.clone()
     }
 
     pub fn get_main_method(&self) -> Method {
@@ -59,5 +55,9 @@ impl Class {
             .method(&method_ref.name_and_type)
             .unwrap()
             .is_native()
+    }
+
+    pub fn identifier(&self) -> ClassIdentifier {
+        self.class_file.class_identifier.clone()
     }
 }

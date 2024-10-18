@@ -5,7 +5,7 @@ use std::{
 
 use tracing::instrument;
 
-use crate::{parser::parse_u16, ClassName, Package};
+use crate::{parser::parse_u16, ClassIdentifier};
 
 use super::{
     attribute::Attribute,
@@ -16,8 +16,7 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
-    pub package: Package,
-    pub name: ClassName,
+    pub class_identifier: ClassIdentifier,
     constant_pool: ConstantPool,
     methods: Vec<Method>,
     fields: Vec<Field>,
@@ -26,7 +25,7 @@ pub struct ClassFile {
 
 impl ClassFile {
     #[instrument(skip_all)]
-    pub fn new(data: &Vec<u8>, package: Package, name: ClassName) -> ClassFile {
+    pub fn new(data: &Vec<u8>, class_identifier: ClassIdentifier) -> ClassFile {
         let mut c = Cursor::new(data);
 
         let mut magic = [0u8; 4];
@@ -64,8 +63,7 @@ impl ClassFile {
         let _attributes = Attribute::attributes(&mut c, &constant_pool);
 
         ClassFile {
-            package,
-            name,
+            class_identifier,
             constant_pool,
             methods,
             fields,
@@ -142,7 +140,7 @@ impl ClassFile {
 
 impl Display for ClassFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}.{}", self.package, self.name)
+        write!(f, "{}", self.class_identifier)
     }
 }
 

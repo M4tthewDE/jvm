@@ -2,7 +2,7 @@ use std::{env, fs::File, io::Read, path::PathBuf};
 
 use zip::ZipArchive;
 
-use crate::{ClassName, Package};
+use crate::ClassIdentifier;
 
 pub struct ClassPath {
     paths: Vec<PathBuf>,
@@ -26,15 +26,15 @@ impl ClassPath {
         ClassPath { paths }
     }
 
-    pub fn find(&self, package: &Package, name: &ClassName) -> Option<Vec<u8>> {
-        let file_name = format!("{name}.class");
+    pub fn find(&self, identifier: &ClassIdentifier) -> Option<Vec<u8>> {
+        let file_name = format!("{}.class", identifier.name);
 
         for path in &self.paths {
             for dir_entry in path.read_dir().unwrap() {
                 let path = dir_entry.unwrap().path();
 
                 if JMOD_FILES.contains(&path.file_name().unwrap().to_str().unwrap()) {
-                    if let Some(p) = Self::find_in_jmod(&path, package, name) {
+                    if let Some(p) = Self::find_in_jmod(&path, identifier) {
                         return Some(p);
                     }
                 }
@@ -48,12 +48,12 @@ impl ClassPath {
         None
     }
 
-    fn find_in_jmod(path: &PathBuf, package: &Package, name: &ClassName) -> Option<Vec<u8>> {
+    fn find_in_jmod(path: &PathBuf, identifier: &ClassIdentifier) -> Option<Vec<u8>> {
         let file = File::open(path).unwrap();
         let mut archive = ZipArchive::new(file).unwrap();
 
-        let package = package.name.replace(".", "/");
-        let file_path = format!("classes/{package}/{name}.class");
+        let package = identifier.package.name.replace(".", "/");
+        let file_path = format!("classes/{package}/{}.class", identifier.name);
 
         let data = match archive.by_name(&file_path) {
             Ok(mut f) => {
