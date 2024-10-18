@@ -40,8 +40,12 @@ impl Method {
         self.access_flags.contains(&MethodFlag::Static)
     }
 
-    fn name(&self, cp: &ConstantPool) -> String {
+    pub fn name(&self, cp: &ConstantPool) -> String {
         cp.utf8(&self.name_index).unwrap()
+    }
+
+    pub fn descriptor(&self, cp: &ConstantPool) -> String {
+        cp.utf8(&self.descriptor_index).unwrap()
     }
 
     fn return_type(&self, cp: &ConstantPool) -> ReturnDescriptor {
@@ -69,8 +73,17 @@ impl Method {
     }
 
     pub fn is_clinit(&self, cp: &ConstantPool) -> bool {
-        cp.utf8(&self.name_index).unwrap_or_default() == "<clinit>"
-            && self.return_type(cp) == ReturnDescriptor::Void
+        self.name(cp) == "<clinit>" && self.return_type(cp) == ReturnDescriptor::Void
+    }
+
+    pub fn is_native(&self) -> bool {
+        for flag in &self.access_flags {
+            if matches!(flag, MethodFlag::Native) {
+                return true;
+            }
+        }
+
+        false
     }
 }
 

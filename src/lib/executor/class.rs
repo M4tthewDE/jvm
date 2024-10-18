@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::parser::{
     class::ClassFile,
-    constant_pool::{FieldRef, Index},
+    constant_pool::{FieldRef, Index, MethodRef},
     field::Field,
     method::Method,
 };
@@ -45,5 +45,16 @@ impl Class {
 
     pub fn clinit_method(&self) -> Option<Method> {
         self.class_file.clinit_method()
+    }
+
+    pub fn method_ref(&self, method_index: &Index) -> Option<MethodRef> {
+        self.class_file.method_ref(method_index)
+    }
+
+    pub fn is_native(&self, method_ref: &MethodRef) -> bool {
+        self.class_file
+            .method(&method_ref.name_and_type)
+            .unwrap()
+            .is_native()
     }
 }

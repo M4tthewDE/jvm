@@ -6,7 +6,10 @@ use stack::Stack;
 
 use crate::{
     loader::ClassLoader,
-    parser::constant_pool::{ClassRef, Index},
+    parser::{
+        constant_pool::{ClassRef, Index},
+        method::Method,
+    },
 };
 
 mod class;
@@ -16,6 +19,7 @@ mod stack;
 pub struct Executor {
     class_loader: ClassLoader,
     initialized_classes: HashMap<String, Class>,
+    class_being_initialized: String,
     stack: Stack,
     pc: usize,
 }
@@ -25,6 +29,7 @@ impl Executor {
         Self {
             class_loader,
             initialized_classes: HashMap::new(),
+            class_being_initialized: String::default(),
             stack: Stack::new(),
             pc: 0,
         }
@@ -35,8 +40,13 @@ impl Executor {
         self.execute_main_method(class);
     }
 
+    fn get_class(&self, package: &str, name: &str) -> Option<Class> {
+        self.initialized_classes.get(&key(package, name)).cloned()
+    }
+
     fn execute_main_method(&mut self, class: Class) {
-        let class = self.initialize(class);
+        self.initialize(class.clone());
+        let class = self.get_class(&class.package(), &class.name()).unwrap();
         let method = class.get_main_method();
 
         // TODO: add []String args, see invokestatic for reference
@@ -45,35 +55,69 @@ impl Executor {
         self.execute_code();
     }
 
-    fn initialize(&mut self, class: Class) -> Class {
-        if let Some(c) = self
+    fn execute_clinit(&mut self, class: Class, method: &Method) {
+        let code = Code::new(method.get_code_attribute().unwrap());
+        self.stack.create(class, code);
+        self.execute_code();
+        todo!("after execute clinit");
+    }
+
+    fn initialize(&mut self, class: Class) {
+        if self
             .initialized_classes
-            .get(&key(&class.package(), &class.name()))
+            .contains_key(&key(&class.package(), &class.name()))
         {
-            return c.clone();
+            return;
         }
 
-        if let Some(clinit) = class.clinit_method() {
-            dbg!(clinit);
-            todo!("execute clinit");
+        if self.class_being_initialized == key(&class.package(), &class.name()) {
+            return;
+        }
+
+        self.class_being_initialized = key(&class.package(), &class.name());
+
+        if let Some(clinit) = &class.clinit_method() {
+            self.execute_clinit(class.clone(), clinit);
         }
 
         self.initialized_classes
-            .insert(key(&class.package(), &class.name()), class.clone());
-        class
+            .insert(key(&class.package(), &class.name()), class);
     }
 
     fn execute_code(&mut self) {
+        self.pc = 0;
         loop {
             match self.stack.get_opcode(self.pc) {
-                GETSTATIC => self.execute_getstatic(),
+                GETSTATIC => self.getstatic(),
+                INVOKESTATIC => self.invoke_static(),
                 instruction => panic!("Unknown instruction 0x{:x}", instruction),
             }
         }
     }
 
-    fn execute_getstatic(&mut self) {
-        let field_ref_index = Index::new(self.stack.get_opcode(self.pc + 2));
+    fn invoke_static(&mut self) {
+        let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
+        let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
+        let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
+        self.pc += 2;
+        let method_ref = self.stack.method_ref(&method_index);
+        let class_file = self
+            .class_loader
+            .load(&method_ref.class.package, &method_ref.class.name);
+        let class = Class::new(class_file);
+        self.initialize(class.clone());
+        if class.is_native(&method_ref) {
+            todo!("implement invoke_static for native methods");
+        } else {
+            todo!("implement invoke_static for non-native methods");
+        }
+        todo!("invoke_static");
+    }
+
+    fn getstatic(&mut self) {
+        let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
+        let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
+        let field_ref_index = Index::new((indexbyte1 << 8) | indexbyte2);
         self.pc += 2;
         self.resolve_field(&field_ref_index);
         todo!("execute_getstatic");
@@ -97,6 +141,7 @@ impl Executor {
          * TODO: What does "the value" mean?
          *
          */
+        todo!("")
     }
 
     fn resolve_class(&mut self, class_ref: &ClassRef) -> Class {
@@ -104,11 +149,13 @@ impl Executor {
         if !self.stack.can_access(&class_file) {
             panic!("{:?} is not allowed to access {class_file}, we should throw IllegalAccessError once we support exceptions", self.stack);
         }
+
         Class::new(class_file)
     }
 }
 
 const GETSTATIC: u8 = 0xb2;
+const INVOKESTATIC: u8 = 0xb8;
 
 fn key(package: &str, name: &str) -> String {
     format!("{package}.{name}")

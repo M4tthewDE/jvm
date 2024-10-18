@@ -21,6 +21,12 @@ pub struct ClassRef {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MethodRef {
+    pub class: ClassRef,
+    pub name_and_type: NameAndType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConstantPool {
     infos: Vec<ConstantPoolInfo>,
 }
@@ -74,6 +80,19 @@ impl ConstantPool {
             })
         } else {
             None
+        }
+    }
+
+    pub fn method_ref(&self, index: &Index) -> Option<MethodRef> {
+        match self.infos.get(index.index).unwrap() {
+            ConstantPoolInfo::MethodRef {
+                class_index,
+                name_and_type_index,
+            } => Some(MethodRef {
+                class: self.class_ref(class_index).unwrap(),
+                name_and_type: self.name_and_type(name_and_type_index).unwrap(),
+            }),
+            _ => None,
         }
     }
 

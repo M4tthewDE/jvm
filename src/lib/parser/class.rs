@@ -9,7 +9,7 @@ use crate::parser::parse_u16;
 
 use super::{
     attribute::Attribute,
-    constant_pool::{ConstantPool, FieldRef, Index, NameAndType},
+    constant_pool::{ConstantPool, FieldRef, Index, MethodRef, NameAndType},
     field::Field,
     method::Method,
 };
@@ -99,6 +99,18 @@ impl ClassFile {
         None
     }
 
+    pub fn method(&self, name_and_type: &NameAndType) -> Option<Method> {
+        for method in &self.methods {
+            if method.descriptor(&self.constant_pool) == name_and_type.descriptor
+                && method.name(&self.constant_pool) == name_and_type.name
+            {
+                return Some(method.clone());
+            }
+        }
+
+        None
+    }
+
     pub fn has_main(&self) -> bool {
         for method in &self.methods {
             if method.is_main(&self.constant_pool) {
@@ -121,6 +133,10 @@ impl ClassFile {
         }
 
         None
+    }
+
+    pub fn method_ref(&self, method_index: &Index) -> Option<MethodRef> {
+        self.constant_pool.method_ref(method_index)
     }
 }
 
