@@ -11,10 +11,10 @@ use super::{
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Method {
-    pub access_flags: Vec<MethodFlag>,
-    pub name_index: Index,
-    pub descriptor_index: Index,
-    pub attributes: Vec<Attribute>,
+    access_flags: Vec<MethodFlag>,
+    name_index: Index,
+    descriptor_index: Index,
+    attributes: Vec<Attribute>,
 }
 
 impl Method {

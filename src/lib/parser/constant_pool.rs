@@ -1,5 +1,7 @@
 use std::io::Cursor;
 
+use crate::{ClassName, Package};
+
 use super::{parse_i32, parse_u16, parse_u8, parse_vec};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -16,8 +18,8 @@ pub struct FieldRef {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassRef {
-    pub package: String,
-    pub name: String,
+    pub package: Package,
+    pub name: ClassName,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -101,8 +103,8 @@ impl ConstantPool {
             let text = self.utf8(&name_index).unwrap();
             let text = text.replace("/", ".");
             let parts: Vec<&str> = text.split(".").collect();
-            let name = parts.last().unwrap().to_string();
-            let package = parts[..parts.len() - 1].join(".");
+            let name = ClassName::new(parts.last().unwrap().to_string());
+            let package = Package::new(parts[..parts.len() - 1].join("."));
             Some(ClassRef { name, package })
         } else {
             None

@@ -10,6 +10,7 @@ use crate::{
         constant_pool::{ClassRef, Index},
         method::Method,
     },
+    ClassName, Package,
 };
 
 mod class;
@@ -18,8 +19,8 @@ mod stack;
 
 pub struct Executor {
     class_loader: ClassLoader,
-    initialized_classes: HashMap<String, Class>,
-    class_being_initialized: String,
+    initialized_classes: HashMap<(Package, ClassName), Class>,
+    class_being_initialized: (Package, ClassName),
     stack: Stack,
     pc: usize,
 }
@@ -29,24 +30,24 @@ impl Executor {
         Self {
             class_loader,
             initialized_classes: HashMap::new(),
-            class_being_initialized: String::default(),
+            class_being_initialized: (Package::default(), ClassName::default()),
             stack: Stack::new(),
             pc: 0,
         }
     }
 
-    pub fn execute(&mut self, package: &str, name: &str) {
+    pub fn execute(&mut self, package: Package, name: ClassName) {
         let class = Class::new(self.class_loader.load(package, name));
         self.execute_main_method(class);
     }
 
-    fn get_class(&self, package: &str, name: &str) -> Option<Class> {
-        self.initialized_classes.get(&key(package, name)).cloned()
+    fn get_class(&self, package: Package, name: ClassName) -> Option<Class> {
+        self.initialized_classes.get(&(package, name)).cloned()
     }
 
     fn execute_main_method(&mut self, class: Class) {
         self.initialize(class.clone());
-        let class = self.get_class(&class.package(), &class.name()).unwrap();
+        let class = self.get_class(class.package(), class.name()).unwrap();
         let method = class.get_main_method();
 
         // TODO: add []String args, see invokestatic for reference
@@ -65,23 +66,23 @@ impl Executor {
     fn initialize(&mut self, class: Class) {
         if self
             .initialized_classes
-            .contains_key(&key(&class.package(), &class.name()))
+            .contains_key(&(class.package(), class.name()))
         {
             return;
         }
 
-        if self.class_being_initialized == key(&class.package(), &class.name()) {
+        if self.class_being_initialized == (class.package(), class.name()) {
             return;
         }
 
-        self.class_being_initialized = key(&class.package(), &class.name());
+        self.class_being_initialized = (class.package(), class.name());
 
         if let Some(clinit) = &class.clinit_method() {
             self.execute_clinit(class.clone(), clinit);
         }
 
         self.initialized_classes
-            .insert(key(&class.package(), &class.name()), class);
+            .insert((class.package(), class.name()), class);
     }
 
     fn execute_code(&mut self) {
@@ -101,9 +102,10 @@ impl Executor {
         let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
         self.pc += 2;
         let method_ref = self.stack.method_ref(&method_index);
-        let class_file = self
-            .class_loader
-            .load(&method_ref.class.package, &method_ref.class.name);
+        let class_file = self.class_loader.load(
+            method_ref.class.package.clone(),
+            method_ref.class.name.clone(),
+        );
         let class = Class::new(class_file);
         self.initialize(class.clone());
         if class.is_native(&method_ref) {
@@ -144,7 +146,9 @@ impl Executor {
     }
 
     fn resolve_class(&mut self, class_ref: &ClassRef) -> Class {
-        let class_file = self.class_loader.load(&class_ref.package, &class_ref.name);
+        let class_file = self
+            .class_loader
+            .load(class_ref.package.clone(), class_ref.name.clone());
         if !self.stack.can_access(&class_file) {
             panic!("{:?} is not allowed to access {class_file}, we should throw IllegalAccessError once we support exceptions", self.stack);
         }
@@ -155,7 +159,3 @@ impl Executor {
 
 const GETSTATIC: u8 = 0xb2;
 const INVOKESTATIC: u8 = 0xb8;
-
-fn key(package: &str, name: &str) -> String {
-    format!("{package}.{name}")
-}

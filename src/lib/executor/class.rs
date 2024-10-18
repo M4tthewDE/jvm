@@ -1,10 +1,13 @@
 use std::fmt::Display;
 
-use crate::parser::{
-    class::ClassFile,
-    constant_pool::{FieldRef, Index, MethodRef},
-    field::Field,
-    method::Method,
+use crate::{
+    parser::{
+        class::ClassFile,
+        constant_pool::{FieldRef, Index, MethodRef},
+        field::Field,
+        method::Method,
+    },
+    ClassName, Package,
 };
 
 #[derive(Debug, Clone)]
@@ -23,12 +26,12 @@ impl Class {
         Self { class_file }
     }
 
-    pub fn package(&self) -> String {
-        self.class_file.package.to_string()
+    pub fn package(&self) -> Package {
+        self.class_file.package.clone()
     }
 
-    pub fn name(&self) -> String {
-        self.class_file.name.to_string()
+    pub fn name(&self) -> ClassName {
+        self.class_file.name.clone()
     }
 
     pub fn get_main_method(&self) -> Method {

@@ -2,6 +2,8 @@ use std::{env, fs::File, io::Read, path::PathBuf};
 
 use zip::ZipArchive;
 
+use crate::{ClassName, Package};
+
 pub struct ClassPath {
     paths: Vec<PathBuf>,
 }
@@ -24,7 +26,7 @@ impl ClassPath {
         ClassPath { paths }
     }
 
-    pub fn find(&self, package: &str, name: &str) -> Option<Vec<u8>> {
+    pub fn find(&self, package: &Package, name: &ClassName) -> Option<Vec<u8>> {
         let file_name = format!("{name}.class");
 
         for path in &self.paths {
@@ -46,11 +48,11 @@ impl ClassPath {
         None
     }
 
-    fn find_in_jmod(path: &PathBuf, package: &str, name: &str) -> Option<Vec<u8>> {
+    fn find_in_jmod(path: &PathBuf, package: &Package, name: &ClassName) -> Option<Vec<u8>> {
         let file = File::open(path).unwrap();
         let mut archive = ZipArchive::new(file).unwrap();
 
-        let package = package.replace(".", "/");
+        let package = package.name.replace(".", "/");
         let file_path = format!("classes/{package}/{name}.class");
 
         let data = match archive.by_name(&file_path) {
