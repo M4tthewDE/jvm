@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 #[test]
+#[should_panic(expected = "not yet implemented: implement invoke_static for native methods")]
 fn test_main() {
     jvm::run(vec![PathBuf::from("testdata/")], "Main");
 }

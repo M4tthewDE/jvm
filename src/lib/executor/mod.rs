@@ -111,7 +111,6 @@ impl Executor {
         } else {
             todo!("implement invoke_static for non-native methods");
         }
-        todo!("invoke_static");
     }
 
     fn getstatic(&mut self) {
