@@ -1,5 +1,6 @@
 use crate::parser::{
     self,
+    attribute::Attribute,
     constant_pool::ConstantPool,
     descriptor::{FieldType, MethodDescriptor, ReturnDescriptor},
     method::MethodFlag,
@@ -10,6 +11,7 @@ pub struct Method {
     pub name: String,
     pub descriptor: MethodDescriptor,
     access_flags: Vec<MethodFlag>,
+    attributes: Vec<Attribute>,
 }
 
 impl Method {
@@ -18,9 +20,10 @@ impl Method {
 
         for method in &parser_methods {
             methods.push(Method {
-                access_flags: method.access_flags.clone(),
-                descriptor: MethodDescriptor::new(&cp.utf8(&method.descriptor_index).unwrap()),
                 name: cp.utf8(&method.name_index).unwrap(),
+                descriptor: MethodDescriptor::new(&cp.utf8(&method.descriptor_index).unwrap()),
+                access_flags: method.access_flags.clone(),
+                attributes: method.attributes.clone(),
             })
         }
 
@@ -59,5 +62,15 @@ impl Method {
 
     pub fn is_main(&self) -> bool {
         self.is_public() && self.is_static() && self.name == "main" && self.has_main_args()
+    }
+
+    pub fn code_attribute(&self) -> Option<Attribute> {
+        for attribute in &self.attributes {
+            if let Attribute::Code { .. } = attribute {
+                return Some(attribute.clone());
+            }
+        }
+
+        None
     }
 }

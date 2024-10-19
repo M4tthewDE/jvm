@@ -7,7 +7,7 @@ use stack::Stack;
 
 use crate::{
     loader::ClassLoader,
-    parser::constant_pool::{ClassRef, Index},
+    parser::{constant_pool::Index, descriptor::MethodDescriptor},
     ClassIdentifier, ClassName, Package,
 };
 
@@ -49,16 +49,16 @@ impl Executor {
     fn execute_main_method(&mut self, class: Class) {
         self.initialize(class.clone());
         let class = self.get_class(&class.identifier).unwrap();
-        let method = class.main_method();
+        let method = class.main_method().unwrap();
 
         // TODO: add []String args, see invokestatic for reference
-        let code = Code::new(method.get_code_attribute().unwrap());
+        let code = Code::new(method.code_attribute().unwrap());
         self.stack.create(class, code);
         self.execute_code();
     }
 
     fn execute_clinit(&mut self, class: Class, method: &Method) {
-        let code = Code::new(method.get_code_attribute().unwrap());
+        let code = Code::new(method.code_attribute().unwrap());
         self.stack.create(class, code);
         self.execute_code();
         todo!("after execute clinit");
@@ -104,7 +104,8 @@ impl Executor {
             .class_loader
             .load(method_ref.class.class_identifier.clone());
         self.initialize(class.clone());
-        if class.is_native(&method_ref) {
+        let method_descriptor = MethodDescriptor::new(&method_ref.name_and_type.descriptor);
+        if class.is_native(&method_ref.name_and_type.name, &method_descriptor) {
             todo!("implement invoke_static for native methods");
         } else {
             todo!("implement invoke_static for non-native methods");
@@ -120,9 +121,9 @@ impl Executor {
         todo!("execute_getstatic");
     }
 
-    fn resolve_field(&mut self, field_ref_index: &Index) {
-        let field_ref = self.stack.field_ref(field_ref_index);
-        let class = self.resolve_class(&field_ref.class_ref);
+    fn resolve_field(&mut self, field_index: &Index) {
+        let field_ref = self.stack.field_ref(field_index);
+        let class = self.resolve_class(field_ref.class_ref.class_identifier.clone());
         let _field = class
             .field(&field_ref.name_and_type)
             .unwrap_or_else(|| panic!("field {field_ref:?} not found"));
@@ -141,8 +142,8 @@ impl Executor {
         todo!("")
     }
 
-    fn resolve_class(&mut self, class_ref: &ClassRef) -> Class {
-        let class = self.class_loader.load(class_ref.class_identifier.clone());
+    fn resolve_class(&mut self, identifier: ClassIdentifier) -> Class {
+        let class = self.class_loader.load(identifier);
         if !self.stack.can_access(&class) {
             panic!("{:?} is not allowed to access {class}, we should throw IllegalAccessError once we support exceptions", self.stack);
         }

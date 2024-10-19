@@ -18,9 +18,9 @@ use super::{
 
 mod annotation;
 mod bootstrap_method;
-pub mod exception;
+mod exception;
 mod inner_class;
-pub mod line_number_table_entry;
+mod line_number_table_entry;
 mod local_variable;
 mod stack_map_frame;
 

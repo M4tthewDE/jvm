@@ -26,16 +26,6 @@ impl Method {
             attributes: Attribute::attributes(c, constant_pool),
         }
     }
-
-    pub fn get_code_attribute(&self) -> Option<Attribute> {
-        for attribute in &self.attributes {
-            if let Attribute::Code { .. } = attribute {
-                return Some(attribute.clone());
-            }
-        }
-
-        None
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

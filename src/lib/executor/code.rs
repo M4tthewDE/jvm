@@ -1,31 +1,21 @@
-use crate::parser::attribute::{exception::Exception, Attribute};
+use crate::parser::attribute::Attribute;
 
 #[derive(Debug, Clone, Default)]
 pub struct Code {
-    _max_stacks: u16,
-    _max_locals: u16,
     opcodes: Vec<u8>,
-    _exceptions: Vec<Exception>,
-    _attributes: Vec<Attribute>,
 }
 
 impl Code {
     pub fn new(code_attribute: Attribute) -> Self {
         if let Attribute::Code {
-            max_stacks,
-            max_locals,
+            max_stacks: _,
+            max_locals: _,
             code,
-            exceptions,
-            attributes,
+            exceptions: _,
+            attributes: _,
         } = code_attribute
         {
-            return Self {
-                _max_stacks: max_stacks,
-                _max_locals: max_locals,
-                opcodes: code,
-                _exceptions: exceptions,
-                _attributes: attributes,
-            };
+            return Self { opcodes: code };
         }
         panic!("can't construct Code out of {:?}", code_attribute);
     }

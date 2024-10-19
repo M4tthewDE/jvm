@@ -1,7 +1,4 @@
-use crate::parser::{
-    class::ClassFile,
-    constant_pool::{FieldRef, Index, MethodRef},
-};
+use crate::parser::constant_pool::{FieldRef, Index, MethodRef};
 
 use super::{class::Class, code::Code};
 

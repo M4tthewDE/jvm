@@ -23,14 +23,6 @@ impl Field {
             _attributes: Attribute::attributes(c, constant_pool),
         }
     }
-
-    pub fn name(&self, constant_pool: &ConstantPool) -> String {
-        constant_pool.utf8(&self.name_index).unwrap()
-    }
-
-    pub fn descriptor(&self, constant_pool: &ConstantPool) -> String {
-        constant_pool.utf8(&self.descriptor_index).unwrap()
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

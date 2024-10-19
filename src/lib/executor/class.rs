@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{
     parser::{
         class::{AccessFlag, ClassFile},
-        constant_pool::NameAndType,
+        constant_pool::{ConstantPool, FieldRef, Index, MethodRef, NameAndType},
         descriptor::MethodDescriptor,
     },
     ClassIdentifier, Package,
@@ -14,6 +14,7 @@ use super::{field::Field, method::Method};
 #[derive(Debug, Clone)]
 pub struct Class {
     pub identifier: ClassIdentifier,
+    constant_pool: ConstantPool,
     methods: Vec<Method>,
     fields: Vec<Field>,
     access_flags: Vec<AccessFlag>,
@@ -29,6 +30,7 @@ impl Class {
     pub fn new(class_file: ClassFile) -> Self {
         Self {
             identifier: class_file.class_identifier,
+            constant_pool: class_file.constant_pool.clone(),
             fields: Field::fields(class_file.fields, &class_file.constant_pool),
             methods: Method::methods(class_file.methods, &class_file.constant_pool),
             access_flags: class_file.access_flags.clone(),
@@ -95,5 +97,13 @@ impl Class {
         }
 
         None
+    }
+
+    pub fn field_ref(&self, field_ref_index: &Index) -> Option<FieldRef> {
+        self.constant_pool.field_ref(field_ref_index)
+    }
+
+    pub fn method_ref(&self, method_ref_index: &Index) -> Option<MethodRef> {
+        self.constant_pool.method_ref(method_ref_index)
     }
 }
