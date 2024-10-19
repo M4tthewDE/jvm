@@ -1,11 +1,11 @@
 use std::{fmt::Display, path::PathBuf};
 
-use executor::Executor;
-use loader::{class_path::ClassPath, ClassLoader};
+use executor::{
+    loader::{class_path::ClassPath, ClassLoader},
+    Executor,
+};
 
-// TODO: restrict after loader is in executor
-pub mod executor;
-mod loader;
+mod executor;
 mod parser;
 
 pub fn run(class_path: Vec<PathBuf>, main_class: ClassIdentifier) {

@@ -7,7 +7,6 @@ use crate::{executor::class::Class, parser::class::ClassFile, ClassIdentifier};
 
 pub mod class_path;
 
-// TODO: move loader module to executer
 pub struct ClassLoader {
     class_path: ClassPath,
     classes: HashMap<ClassIdentifier, Class>,

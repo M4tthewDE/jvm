@@ -2,19 +2,19 @@ use std::collections::HashMap;
 
 use class::Class;
 use code::Code;
+use loader::ClassLoader;
 use method::Method;
 use stack::Stack;
 
 use crate::{
-    loader::ClassLoader,
     parser::{constant_pool::Index, descriptor::MethodDescriptor},
     ClassIdentifier, ClassName, Package,
 };
 
-// TODO: restrict after loader is in executor
-pub mod class;
+mod class;
 mod code;
 mod field;
+pub mod loader;
 mod method;
 mod stack;
 

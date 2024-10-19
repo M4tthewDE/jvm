@@ -8,7 +8,7 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub struct Field {
-    pub access_flags: Vec<FieldFlag>,
+    _access_flags: Vec<FieldFlag>,
     pub name_index: Index,
     pub descriptor_index: Index,
     _attributes: Vec<Attribute>,
@@ -17,7 +17,7 @@ pub struct Field {
 impl Field {
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Self {
         Self {
-            access_flags: FieldFlag::flags(parse_u16(c)),
+            _access_flags: FieldFlag::flags(parse_u16(c)),
             name_index: Index::new(parse_u16(c)),
             descriptor_index: Index::new(parse_u16(c)),
             _attributes: Attribute::attributes(c, constant_pool),
