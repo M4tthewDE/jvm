@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 
 use super::{stack::Word, Executor};
 
-type NativeMethod = fn(&mut Executor, Vec<Word>);
+type NativeMethod = fn(&mut Executor, Vec<Word>) -> Option<Word>;
 
 lazy_static! {
     static ref NATIVE_STATIC_METHODS: HashMap<(ClassIdentifier, String, Vec<FieldType>), NativeMethod> = {
@@ -34,17 +34,17 @@ pub fn invoke_static(
     name: String,
     parameters: Vec<FieldType>,
     operands: Vec<Word>,
-) {
+) -> Option<Word> {
     NATIVE_STATIC_METHODS
         .get(&(class_identifier.clone(), name.clone(), parameters.clone()))
         .unwrap_or_else(|| {
             panic!(
         "native method {name} in {class_identifier} with parameters {parameters:?} not implemented"
     )
-        })(executor, operands);
+        })(executor, operands)
 }
 
-fn register_natives(executor: &mut Executor, _operands: Vec<Word>) {
+fn register_natives(executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
     let method_ref = MethodRef {
         class: ClassRef {
             class_identifier: ClassIdentifier::from("java.lang".to_string(), "System".to_string()),
@@ -58,4 +58,5 @@ fn register_natives(executor: &mut Executor, _operands: Vec<Word>) {
         },
     };
     executor.invoke_static(method_ref);
+    None
 }

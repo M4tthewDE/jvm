@@ -67,12 +67,16 @@ impl Stack {
         self.current_frame().code.get_opcode(i)
     }
 
-    pub fn pop(&mut self, n: usize) -> Vec<Word> {
+    pub fn pop_operands(&mut self, n: usize) -> Vec<Word> {
         let mut operands = Vec::new();
         for _ in 0..n {
             operands.push(self.operand_stack.pop().unwrap());
         }
 
         operands
+    }
+
+    pub fn push_operand(&mut self, word: Word) {
+        self.operand_stack.push(word);
     }
 }
