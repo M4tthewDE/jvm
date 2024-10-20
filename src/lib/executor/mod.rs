@@ -7,7 +7,10 @@ use method::Method;
 use stack::Stack;
 
 use crate::{
-    parser::{constant_pool::Index, descriptor::MethodDescriptor},
+    parser::{
+        constant_pool::{Index, MethodRef},
+        descriptor::MethodDescriptor,
+    },
     ClassIdentifier, ClassName, Package,
 };
 
@@ -16,6 +19,7 @@ mod code;
 mod field;
 pub mod loader;
 mod method;
+mod native;
 mod stack;
 
 pub struct Executor {
@@ -25,6 +29,9 @@ pub struct Executor {
     stack: Stack,
     pc: usize,
 }
+
+const GETSTATIC: u8 = 0xb2;
+const INVOKESTATIC: u8 = 0xb8;
 
 impl Executor {
     pub fn new(class_loader: ClassLoader) -> Self {
@@ -87,14 +94,14 @@ impl Executor {
         self.pc = 0;
         loop {
             match self.stack.get_opcode(self.pc) {
-                GETSTATIC => self.getstatic(),
-                INVOKESTATIC => self.invoke_static(),
+                GETSTATIC => self.getstatic_op(),
+                INVOKESTATIC => self.invokestatic_op(),
                 instruction => panic!("Unknown instruction 0x{:x}", instruction),
             }
         }
     }
 
-    fn invoke_static(&mut self) {
+    fn invokestatic_op(&mut self) {
         let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
         let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
         let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
@@ -106,13 +113,18 @@ impl Executor {
         self.initialize(class.clone());
         let method_descriptor = MethodDescriptor::new(&method_ref.name_and_type.descriptor);
         if class.is_native(&method_ref.name_and_type.name, &method_descriptor) {
-            todo!("implement invoke_static for native methods");
+            native::invoke_static(
+                self,
+                class.identifier,
+                method_ref.name_and_type.name,
+                method_descriptor.parameters,
+            );
         } else {
             todo!("implement invoke_static for non-native methods");
         }
     }
 
-    fn getstatic(&mut self) {
+    fn getstatic_op(&mut self) {
         let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
         let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
         let field_ref_index = Index::new((indexbyte1 << 8) | indexbyte2);
@@ -151,6 +163,3 @@ impl Executor {
         class
     }
 }
-
-const GETSTATIC: u8 = 0xb2;
-const INVOKESTATIC: u8 = 0xb8;

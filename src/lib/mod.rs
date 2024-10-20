@@ -61,6 +61,13 @@ impl ClassIdentifier {
     pub fn new(package: Package, name: ClassName) -> Self {
         Self { package, name }
     }
+
+    pub fn from(package: String, name: String) -> Self {
+        Self {
+            package: Package::new(package),
+            name: ClassName::new(name),
+        }
+    }
 }
 
 impl Display for ClassIdentifier {

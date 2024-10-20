@@ -9,11 +9,9 @@ use local_variable::{LocalVariable, LocalVariableType};
 use stack_map_frame::StackMapFrame;
 use tracing::{debug, instrument};
 
-use crate::parser::{parse_u32, parse_vec};
-
 use super::{
     constant_pool::{ConstantPool, Index},
-    parse_u16,
+    parse_u16, parse_u32, parse_vec,
 };
 
 mod annotation;
