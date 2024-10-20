@@ -1,9 +1,13 @@
-use crate::parser::{self, constant_pool::ConstantPool};
+use crate::parser::{
+    self,
+    constant_pool::ConstantPool,
+    descriptor::{Descriptor, FieldType},
+};
 
 #[derive(Debug, Clone)]
 pub struct Field {
     pub name: String,
-    pub descriptor: String,
+    pub descriptor: Descriptor,
 }
 
 impl Field {
@@ -12,7 +16,9 @@ impl Field {
         for field in parser_fields {
             fields.push(Field {
                 name: cp.utf8(&field.name_index).unwrap(),
-                descriptor: cp.utf8(&field.descriptor_index).unwrap(),
+                descriptor: Descriptor::Field(FieldType::new(
+                    &cp.utf8(&field.descriptor_index).unwrap(),
+                )),
             })
         }
 

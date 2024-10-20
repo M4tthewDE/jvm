@@ -2,13 +2,15 @@ use std::io::Cursor;
 
 use crate::{ClassIdentifier, ClassName, Package};
 
-use super::{parse_i32, parse_u16, parse_u8, parse_vec};
+use super::{
+    descriptor::{Descriptor, FieldType, MethodDescriptor},
+    parse_i32, parse_u16, parse_u8, parse_vec,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
     pub name: String,
-    // TODO: this should probably not be a String
-    pub descriptor: String,
+    pub descriptor: Descriptor,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -78,7 +80,7 @@ impl ConstantPool {
         {
             Some(FieldRef {
                 class_ref: self.class_ref(class_index).unwrap(),
-                name_and_type: self.name_and_type(name_and_type_index).unwrap(),
+                name_and_type: self.name_and_type_field(name_and_type_index).unwrap(),
             })
         } else {
             None
@@ -92,7 +94,7 @@ impl ConstantPool {
                 name_and_type_index,
             } => Some(MethodRef {
                 class: self.class_ref(class_index).unwrap(),
-                name_and_type: self.name_and_type(name_and_type_index).unwrap(),
+                name_and_type: self.name_and_type_method(name_and_type_index).unwrap(),
             }),
             _ => None,
         }
@@ -112,7 +114,7 @@ impl ConstantPool {
         }
     }
 
-    fn name_and_type(&self, index: &Index) -> Option<NameAndType> {
+    fn name_and_type_method(&self, index: &Index) -> Option<NameAndType> {
         if let ConstantPoolInfo::NameAndType {
             name_index,
             descriptor_index,
@@ -120,7 +122,26 @@ impl ConstantPool {
         {
             Some(NameAndType {
                 name: self.utf8(&name_index).unwrap(),
-                descriptor: self.utf8(&descriptor_index).unwrap(),
+                descriptor: Descriptor::Method(MethodDescriptor::new(
+                    &self.utf8(&descriptor_index).unwrap(),
+                )),
+            })
+        } else {
+            None
+        }
+    }
+
+    fn name_and_type_field(&self, index: &Index) -> Option<NameAndType> {
+        if let ConstantPoolInfo::NameAndType {
+            name_index,
+            descriptor_index,
+        } = self.get(index).unwrap()
+        {
+            Some(NameAndType {
+                name: self.utf8(&name_index).unwrap(),
+                descriptor: Descriptor::Field(FieldType::new(
+                    &self.utf8(&descriptor_index).unwrap(),
+                )),
             })
         } else {
             None

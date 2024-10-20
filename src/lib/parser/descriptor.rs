@@ -1,3 +1,17 @@
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Descriptor {
+    Field(FieldType),
+    Method(MethodDescriptor),
+}
+impl Descriptor {
+    pub fn method_descriptor(&self) -> Option<MethodDescriptor> {
+        match self {
+            Descriptor::Field(_) => None,
+            Descriptor::Method(md) => Some(md.clone()),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum FieldType {
     Byte,
@@ -13,7 +27,7 @@ pub enum FieldType {
 }
 
 impl FieldType {
-    fn new(text: &str) -> Self {
+    pub fn new(text: &str) -> Self {
         match text.chars().next().unwrap() {
             'B' => Self::Byte,
             'C' => Self::Char,

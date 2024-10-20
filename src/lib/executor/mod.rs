@@ -7,10 +7,7 @@ use method::Method;
 use stack::Stack;
 
 use crate::{
-    parser::{
-        constant_pool::{Index, MethodRef},
-        descriptor::MethodDescriptor,
-    },
+    parser::constant_pool::{Index, MethodRef},
     ClassIdentifier, ClassName, Package,
 };
 
@@ -116,13 +113,18 @@ impl Executor {
             .class_loader
             .load(method_ref.class.class_identifier.clone());
         self.initialize(class.clone());
-        let method_descriptor = MethodDescriptor::new(&method_ref.name_and_type.descriptor);
-        if class.is_native(&method_ref.name_and_type.name, &method_descriptor) {
+        let method_descriptor = &method_ref
+            .name_and_type
+            .descriptor
+            .method_descriptor()
+            .unwrap();
+
+        if class.is_native(&method_ref.name_and_type.name, method_descriptor) {
             native::invoke_static(
                 self,
                 class.identifier,
                 method_ref.name_and_type.name,
-                method_descriptor.parameters,
+                method_descriptor.parameters.clone(),
             );
         } else {
             todo!("implement invoke_static for non-native methods");

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     parser::{
         constant_pool::{ClassRef, MethodRef, NameAndType},
-        descriptor::FieldType,
+        descriptor::{Descriptor, FieldType, MethodDescriptor, ReturnDescriptor},
     },
     ClassIdentifier,
 };
@@ -50,7 +50,10 @@ fn register_natives(executor: &mut Executor) {
         },
         name_and_type: NameAndType {
             name: "initPhase1".to_string(),
-            descriptor: "()V".to_string(),
+            descriptor: Descriptor::Method(MethodDescriptor {
+                parameters: vec![],
+                return_descriptor: ReturnDescriptor::Void,
+            }),
         },
     };
     executor.invoke_static(method_ref);
