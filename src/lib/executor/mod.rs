@@ -107,6 +107,11 @@ impl Executor {
         let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
         self.pc += 2;
         let method_ref = self.stack.method_ref(&method_index);
+        self.invoke_static(method_ref);
+    }
+
+    fn invoke_static(&mut self, method_ref: MethodRef) {
+        // TODO what about the stack?
         let class = self
             .class_loader
             .load(method_ref.class.class_identifier.clone());

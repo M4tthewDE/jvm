@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{parser::descriptor::FieldType, ClassIdentifier};
+use crate::{
+    parser::{
+        constant_pool::{ClassRef, MethodRef, NameAndType},
+        descriptor::FieldType,
+    },
+    ClassIdentifier,
+};
 use lazy_static::lazy_static;
 
 use super::Executor;
@@ -38,5 +44,14 @@ pub fn invoke_static(
 }
 
 fn register_natives(executor: &mut Executor) {
-    todo!("register_natives");
+    let method_ref = MethodRef {
+        class: ClassRef {
+            class_identifier: ClassIdentifier::from("java.lang".to_string(), "System".to_string()),
+        },
+        name_and_type: NameAndType {
+            name: "initPhase1".to_string(),
+            descriptor: "()V".to_string(),
+        },
+    };
+    executor.invoke_static(method_ref);
 }

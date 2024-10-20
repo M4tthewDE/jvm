@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use jvm::{ClassIdentifier, ClassName, Package};
 
 #[test]
-#[should_panic(expected = "not yet implemented: implement invoke_static for native methods")]
+#[should_panic(expected = "not yet implemented: implement invoke_static for non-native methods")]
 fn test_main() {
     let package = Package::default();
     let name = ClassName::new("Main".to_string());

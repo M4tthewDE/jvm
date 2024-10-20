@@ -7,6 +7,7 @@ use super::{parse_i32, parse_u16, parse_u8, parse_vec};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
     pub name: String,
+    // TODO: this should probably not be a String
     pub descriptor: String,
 }
 
