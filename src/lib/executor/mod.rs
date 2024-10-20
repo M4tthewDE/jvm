@@ -119,9 +119,8 @@ impl Executor {
             .method_descriptor()
             .unwrap();
 
+        let operands = self.stack.pop_operands(method_descriptor.parameters.len());
         if class.is_native(&method_ref.name_and_type.name, method_descriptor) {
-            let operands = self.stack.pop_operands(method_descriptor.parameters.len());
-
             if let Some(word) = native::invoke_static(
                 self,
                 class.identifier,
@@ -132,7 +131,13 @@ impl Executor {
                 self.stack.push_operand(word);
             }
         } else {
-            todo!("implement invoke_static for non-native methods");
+            let method = class
+                .method(&method_ref.name_and_type.name, method_descriptor)
+                .unwrap();
+            let code = Code::new(method.code_attribute().unwrap());
+            self.stack.create(class, method, code);
+            self.execute_code();
+            todo!("after invoke_static has executed its code");
         }
     }
 

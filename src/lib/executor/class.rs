@@ -89,7 +89,7 @@ impl Class {
         false
     }
 
-    fn method(&self, name: &str, descriptor: &MethodDescriptor) -> Option<Method> {
+    pub fn method(&self, name: &str, descriptor: &MethodDescriptor) -> Option<Method> {
         for method in &self.methods {
             if method.descriptor == *descriptor && method.name == name {
                 return Some(method.clone());
