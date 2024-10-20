@@ -1,6 +1,6 @@
 use crate::parser::constant_pool::{FieldRef, Index, MethodRef};
 
-use super::{class::Class, code::Code};
+use super::{class::Class, code::Code, method::Method};
 
 #[derive(Debug)]
 pub struct Word {}
@@ -9,13 +9,15 @@ pub struct Word {}
 struct Frame {
     _local_variables: Vec<Word>,
     class: Class,
+    _method: Method,
     code: Code,
 }
 impl Frame {
-    fn new(class: Class, code: Code) -> Self {
+    fn new(class: Class, method: Method, code: Code) -> Self {
         Self {
             _local_variables: Vec::new(),
             class,
+            _method: method,
             code,
         }
     }
@@ -47,8 +49,8 @@ impl Stack {
         self.frames.last().unwrap()
     }
 
-    pub fn create(&mut self, class: Class, code: Code) {
-        self.frames.push(Frame::new(class, code))
+    pub fn create(&mut self, class: Class, method: Method, code: Code) {
+        self.frames.push(Frame::new(class, method, code))
     }
 
     pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {

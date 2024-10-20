@@ -57,13 +57,13 @@ impl Executor {
 
         // TODO: add []String args, see invokestatic for reference
         let code = Code::new(method.code_attribute().unwrap());
-        self.stack.create(class, code);
+        self.stack.create(class, method, code);
         self.execute_code();
     }
 
-    fn execute_clinit(&mut self, class: Class, method: &Method) {
+    fn execute_clinit(&mut self, class: Class, method: Method) {
         let code = Code::new(method.code_attribute().unwrap());
-        self.stack.create(class, code);
+        self.stack.create(class, method, code);
         self.execute_code();
         todo!("after execute clinit");
     }
@@ -79,7 +79,7 @@ impl Executor {
 
         self.class_being_initialized = class.identifier.clone();
 
-        if let Some(clinit) = &class.clinit_method() {
+        if let Some(clinit) = class.clinit_method() {
             self.execute_clinit(class.clone(), clinit);
         }
 
