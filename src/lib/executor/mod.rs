@@ -4,6 +4,7 @@ use class::Class;
 use code::Code;
 use loader::ClassLoader;
 use method::Method;
+use op::OP_METHODS;
 use stack::Stack;
 
 use crate::{
@@ -17,6 +18,7 @@ mod field;
 pub mod loader;
 mod method;
 mod native;
+mod op;
 mod stack;
 
 pub struct Executor {
@@ -26,9 +28,6 @@ pub struct Executor {
     stack: Stack,
     pc: usize,
 }
-
-const GETSTATIC: u8 = 0xb2;
-const INVOKESTATIC: u8 = 0xb8;
 
 impl Executor {
     pub fn new(class_loader: ClassLoader) -> Self {
@@ -90,21 +89,12 @@ impl Executor {
     fn execute_code(&mut self) {
         self.pc = 0;
         loop {
-            match self.stack.get_opcode(self.pc) {
-                GETSTATIC => self.getstatic_op(),
-                INVOKESTATIC => self.invokestatic_op(),
-                instruction => panic!("Unknown instruction 0x{:x}", instruction),
-            }
+            let op_code = self.stack.get_opcode(self.pc);
+            let op = OP_METHODS
+                .get(&op_code)
+                .unwrap_or_else(|| panic!("Unknown instruction 0x{:x}", op_code));
+            op(self);
         }
-    }
-
-    fn invokestatic_op(&mut self) {
-        let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
-        let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
-        let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-        self.pc += 2;
-        let method_ref = self.stack.method_ref(&method_index);
-        self.invoke_static(method_ref);
     }
 
     fn invoke_static(&mut self, method_ref: MethodRef) {
@@ -139,15 +129,6 @@ impl Executor {
             self.execute_code();
             todo!("after invoke_static has executed its code");
         }
-    }
-
-    fn getstatic_op(&mut self) {
-        let indexbyte1 = self.stack.get_opcode(self.pc + 1) as u16;
-        let indexbyte2 = self.stack.get_opcode(self.pc + 2) as u16;
-        let field_ref_index = Index::new((indexbyte1 << 8) | indexbyte2);
-        self.pc += 2;
-        self.resolve_field(&field_ref_index);
-        todo!("execute_getstatic");
     }
 
     fn resolve_field(&mut self, field_index: &Index) {
