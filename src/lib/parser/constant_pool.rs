@@ -100,7 +100,7 @@ impl ConstantPool {
         }
     }
 
-    fn class_ref(&self, index: &Index) -> Option<ClassRef> {
+    pub fn class_ref(&self, index: &Index) -> Option<ClassRef> {
         if let ConstantPoolInfo::ClassRef { name_index } = self.get(index).unwrap() {
             let text = self.utf8(&name_index).unwrap();
             let text = text.replace("/", ".");

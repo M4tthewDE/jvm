@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{
     parser::{
         class::{AccessFlag, ClassFile},
-        constant_pool::{ConstantPool, FieldRef, Index, MethodRef, NameAndType},
+        constant_pool::{ClassRef, ConstantPool, FieldRef, Index, MethodRef, NameAndType},
         descriptor::MethodDescriptor,
     },
     ClassIdentifier, Package,
@@ -105,5 +105,9 @@ impl Class {
 
     pub fn method_ref(&self, method_ref_index: &Index) -> Option<MethodRef> {
         self.constant_pool.method_ref(method_ref_index)
+    }
+
+    pub(crate) fn class_ref(&self, class_index: &Index) -> Option<ClassRef> {
+        self.constant_pool.class_ref(class_index)
     }
 }

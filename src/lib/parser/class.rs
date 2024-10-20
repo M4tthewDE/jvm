@@ -7,12 +7,18 @@ use tracing::instrument;
 
 use crate::{parser::parse_u16, ClassIdentifier};
 
-use super::{attribute::Attribute, constant_pool::ConstantPool, field::Field, method::Method};
+use super::{
+    attribute::Attribute,
+    constant_pool::{ConstantPool, Index},
+    field::Field,
+    method::Method,
+};
 
 #[derive(Clone, Debug)]
 pub struct ClassFile {
     pub class_identifier: ClassIdentifier,
     pub constant_pool: ConstantPool,
+    pub _interfaces: Vec<Index>,
     pub methods: Vec<Method>,
     pub fields: Vec<Field>,
     pub access_flags: Vec<AccessFlag>,
@@ -38,7 +44,12 @@ impl ClassFile {
         let _this_class = parse_u16(&mut c);
         let _super_class = parse_u16(&mut c);
         let interfaces_count = parse_u16(&mut c);
-        assert_eq!(interfaces_count, 0, "not implemented");
+
+        let mut interfaces = Vec::new();
+        for _ in 0..interfaces_count {
+            let index = parse_u16(&mut c);
+            interfaces.push(Index::new(index));
+        }
 
         let fields_count = parse_u16(&mut c);
         let mut fields = Vec::new();
@@ -60,6 +71,7 @@ impl ClassFile {
         ClassFile {
             class_identifier,
             constant_pool,
+            _interfaces: interfaces,
             methods,
             fields,
             access_flags,

@@ -7,6 +7,7 @@ use lazy_static::lazy_static;
 
 const GETSTATIC: u8 = 0xb2;
 const INVOKESTATIC: u8 = 0xb8;
+const NEW: u8 = 0xbb;
 
 type OpMethod = fn(&mut Executor);
 type Op = u8;
@@ -16,6 +17,7 @@ lazy_static! {
         let mut h = HashMap::new();
         h.insert(GETSTATIC, getstatic as OpMethod);
         h.insert(INVOKESTATIC, invokestatic as OpMethod);
+        h.insert(NEW, new as OpMethod);
         h
     };
 }
@@ -36,4 +38,14 @@ fn getstatic(executor: &mut Executor) {
     executor.pc += 2;
     executor.resolve_field(&field_ref_index);
     todo!("execute_getstatic");
+}
+
+fn new(executor: &mut Executor) {
+    let indexbyte1 = executor.stack.get_opcode(executor.pc + 1) as u16;
+    let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
+    let class_index = Index::new((indexbyte1 << 8) | indexbyte2);
+    let class_ref = executor.stack.class_ref(&class_index);
+    let class = executor.resolve_class(class_ref.class_identifier.clone());
+    dbg!(class);
+    todo!("new");
 }

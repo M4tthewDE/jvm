@@ -50,7 +50,7 @@ impl Executor {
     }
 
     fn execute_main_method(&mut self, class: Class) {
-        self.initialize(class.clone());
+        self.initialize_class(class.clone());
         let class = self.get_class(&class.identifier).unwrap();
         let method = class.main_method().unwrap();
 
@@ -67,7 +67,7 @@ impl Executor {
         todo!("after execute clinit");
     }
 
-    fn initialize(&mut self, class: Class) {
+    fn initialize_class(&mut self, class: Class) {
         if self.initialized_classes.contains_key(&class.identifier) {
             return;
         }
@@ -102,7 +102,7 @@ impl Executor {
         let class = self
             .class_loader
             .load(method_ref.class.class_identifier.clone());
-        self.initialize(class.clone());
+        self.initialize_class(class.clone());
         let method_descriptor = &method_ref
             .name_and_type
             .descriptor
@@ -137,7 +137,7 @@ impl Executor {
         let _field = class
             .field(&field_ref.name_and_type)
             .unwrap_or_else(|| panic!("field {field_ref:?} not found"));
-        self.initialize(class);
+        self.initialize_class(class);
         /*
          *
          * On successful resolution of the field, the class or interface that

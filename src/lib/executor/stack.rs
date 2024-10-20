@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{FieldRef, Index, MethodRef};
+use crate::parser::constant_pool::{ClassRef, FieldRef, Index, MethodRef};
 
 use super::{class::Class, code::Code, method::Method};
 
@@ -29,6 +29,10 @@ impl Frame {
     fn method_ref(&self, method_index: &Index) -> MethodRef {
         self.class.method_ref(method_index).unwrap()
     }
+
+    fn class_ref(&self, class_index: &Index) -> ClassRef {
+        self.class.class_ref(class_index).unwrap()
+    }
 }
 
 #[derive(Debug)]
@@ -55,6 +59,10 @@ impl Stack {
 
     pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
         self.current_frame().field_ref(field_ref_index)
+    }
+
+    pub fn class_ref(&self, class_index: &Index) -> ClassRef {
+        self.current_frame().class_ref(class_index)
     }
 
     pub fn method_ref(&self, method_index: &Index) -> MethodRef {
