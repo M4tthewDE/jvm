@@ -3,7 +3,7 @@ use crate::parser::constant_pool::{FieldRef, Index, MethodRef};
 use super::{class::Class, code::Code};
 
 #[derive(Debug)]
-struct Word {}
+pub struct Word {}
 
 #[derive(Debug)]
 struct Frame {
@@ -32,14 +32,14 @@ impl Frame {
 #[derive(Debug)]
 pub struct Stack {
     frames: Vec<Frame>,
-    _operand_stack: Vec<Word>,
+    operand_stack: Vec<Word>,
 }
 
 impl Stack {
     pub fn new() -> Self {
         Self {
             frames: Vec::new(),
-            _operand_stack: Vec::new(),
+            operand_stack: Vec::new(),
         }
     }
 
@@ -65,5 +65,14 @@ impl Stack {
 
     pub fn get_opcode(&self, i: usize) -> u8 {
         self.current_frame().code.get_opcode(i)
+    }
+
+    pub fn pop(&mut self, n: usize) -> Vec<Word> {
+        let mut operands = Vec::new();
+        for _ in 0..n {
+            operands.push(self.operand_stack.pop().unwrap());
+        }
+
+        operands
     }
 }

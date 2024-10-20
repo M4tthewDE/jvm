@@ -120,11 +120,13 @@ impl Executor {
             .unwrap();
 
         if class.is_native(&method_ref.name_and_type.name, method_descriptor) {
+            let operands = self.stack.pop(method_descriptor.parameters.len());
             native::invoke_static(
                 self,
                 class.identifier,
                 method_ref.name_and_type.name,
                 method_descriptor.parameters.clone(),
+                operands,
             );
         } else {
             todo!("implement invoke_static for non-native methods");
