@@ -70,6 +70,13 @@ pub enum Attribute {
     InnerClasses {
         classes: Vec<InnerClass>,
     },
+    EnclosingMethod {
+        class_index: Index,
+        method_index: Index,
+    },
+    NestHost {
+        host_class_index: Index,
+    },
 }
 
 impl Attribute {
@@ -96,6 +103,8 @@ impl Attribute {
             "NestMembers" => Self::nest_members(c),
             "BootstrapMethods" => Self::bootstrap_methods(c),
             "InnerClasses" => Self::inner_classes(c),
+            "EnclosingMethod" => Self::enclosing_method(c),
+            "NestHost" => Self::nest_host(c),
             i => panic!("unknown attribute {i}"),
         }
     }
@@ -252,5 +261,18 @@ impl Attribute {
         }
 
         Self::InnerClasses { classes }
+    }
+
+    fn enclosing_method(c: &mut Cursor<&Vec<u8>>) -> Self {
+        Self::EnclosingMethod {
+            class_index: Index::new(parse_u16(c)),
+            method_index: Index::new(parse_u16(c)),
+        }
+    }
+
+    fn nest_host(c: &mut Cursor<&Vec<u8>>) -> Self {
+        Self::NestHost {
+            host_class_index: Index::new(parse_u16(c)),
+        }
     }
 }

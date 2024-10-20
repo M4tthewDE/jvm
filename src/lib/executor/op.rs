@@ -45,7 +45,6 @@ fn new(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
     let class_index = Index::new((indexbyte1 << 8) | indexbyte2);
     let class_ref = executor.stack.class_ref(&class_index);
-    let class = executor.resolve_class(class_ref.class_identifier.clone());
-    dbg!(class);
+    let _class = executor.resolve_class(class_ref.class_identifier.clone());
     todo!("new");
 }
