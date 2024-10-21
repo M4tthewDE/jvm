@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    executor::{instance::Instance, stack::Word},
+    executor::{code::Code, instance::Instance, stack::Word},
     parser::constant_pool::Index,
 };
 
@@ -13,6 +13,7 @@ const INVOKESPECIAL: u8 = 0xb7;
 const INVOKESTATIC: u8 = 0xb8;
 const NEW: u8 = 0xbb;
 const DUP: u8 = 0x59;
+const ALOAD_0: u8 = 0x2a;
 
 type OpMethod = fn(&mut Executor);
 type Op = u8;
@@ -25,6 +26,7 @@ lazy_static! {
         h.insert(INVOKESTATIC, invokestatic as OpMethod);
         h.insert(NEW, new as OpMethod);
         h.insert(DUP, dup as OpMethod);
+        h.insert(ALOAD_0, aload_0 as OpMethod);
         h
     };
 }
@@ -74,6 +76,24 @@ fn invokespecial(executor: &mut Executor) {
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
     executor.pc += 3;
     let method_ref = executor.stack.method_ref(&method_index);
-    dbg!(&method_ref);
+    let method_descriptor = &method_ref
+        .name_and_type
+        .descriptor
+        .method_descriptor()
+        .unwrap();
+    let class = executor.resolve_class(method_ref.class.class_identifier);
+    let method = class
+        .method(&method_ref.name_and_type.name, method_descriptor)
+        .unwrap();
+    let code = Code::new(method.code_attribute().unwrap());
+    let operands = executor
+        .stack
+        .pop_operands(method_descriptor.parameters.len() + 1);
+    executor.stack.create(class, method, code, operands);
+    executor.execute_code();
     todo!("invoke_special");
+}
+
+fn aload_0(executor: &mut Executor) {
+    todo!("aload_0");
 }

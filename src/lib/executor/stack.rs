@@ -25,9 +25,9 @@ struct Frame {
     code: Code,
 }
 impl Frame {
-    fn new(class: Class, method: Method, code: Code) -> Self {
+    fn new(class: Class, method: Method, code: Code, operands: Vec<Word>) -> Self {
         Self {
-            _local_variables: Vec::new(),
+            _local_variables: operands,
             class,
             _method: method,
             code,
@@ -65,8 +65,8 @@ impl Stack {
         self.frames.last().unwrap()
     }
 
-    pub fn create(&mut self, class: Class, method: Method, code: Code) {
-        self.frames.push(Frame::new(class, method, code))
+    pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
+        self.frames.push(Frame::new(class, method, code, operands))
     }
 
     pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
