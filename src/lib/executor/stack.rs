@@ -1,9 +1,21 @@
 use crate::parser::constant_pool::{ClassRef, FieldRef, Index, MethodRef};
 
-use super::{class::Class, code::Code, method::Method};
+use super::{class::Class, code::Code, instance::Instance, method::Method};
 
-#[derive(Debug)]
-pub struct Word {}
+#[derive(Debug, Clone)]
+pub enum Word {
+    _Byte(i8),
+    _Short(i16),
+    _Int(i32),
+    _Long(i64),
+    _Char(u16),
+    _Float(f32),
+    _Double(f64),
+    _Boolean(bool),
+    _ReturnAdress(usize),
+    Reference { _instance: Instance },
+    _Null,
+}
 
 #[derive(Debug)]
 struct Frame {

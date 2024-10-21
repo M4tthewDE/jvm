@@ -16,7 +16,7 @@ pub struct Class {
     pub identifier: ClassIdentifier,
     constant_pool: ConstantPool,
     methods: Vec<Method>,
-    fields: Vec<Field>,
+    pub fields: Vec<Field>,
     access_flags: Vec<AccessFlag>,
 }
 

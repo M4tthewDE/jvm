@@ -6,6 +6,7 @@ use loader::ClassLoader;
 use method::Method;
 use op::OP_METHODS;
 use stack::Stack;
+use tracing::info;
 
 use crate::{
     parser::constant_pool::{Index, MethodRef},
@@ -15,6 +16,7 @@ use crate::{
 mod class;
 mod code;
 mod field;
+mod instance;
 pub mod loader;
 mod method;
 mod native;
@@ -90,6 +92,7 @@ impl Executor {
         self.pc = 0;
         loop {
             let op_code = self.stack.get_opcode(self.pc);
+            info!("executing op 0x{:x}", op_code);
             let op = OP_METHODS
                 .get(&op_code)
                 .unwrap_or_else(|| panic!("Unknown instruction 0x{:x}", op_code));
