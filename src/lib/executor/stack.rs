@@ -21,16 +21,18 @@ pub enum Word {
 struct Frame {
     local_variables: Vec<Word>,
     class: Class,
-    _method: Method,
+    method: Method,
     code: Code,
+    pc: usize,
 }
 impl Frame {
     fn new(class: Class, method: Method, code: Code, operands: Vec<Word>) -> Self {
         Self {
             local_variables: operands,
             class,
-            _method: method,
+            method,
             code,
+            pc: 0,
         }
     }
 
@@ -44,6 +46,14 @@ impl Frame {
 
     fn class_ref(&self, class_index: &Index) -> ClassRef {
         self.class.class_ref(class_index).unwrap()
+    }
+
+    fn pc(&mut self, n: usize) {
+        self.pc += n;
+    }
+
+    fn get_op_code(&self) -> u8 {
+        self.code.get_opcode(self.pc)
     }
 }
 
@@ -63,6 +73,10 @@ impl Stack {
 
     fn current_frame(&self) -> &Frame {
         self.frames.last().unwrap()
+    }
+
+    fn current_frame_mut(&mut self) -> &mut Frame {
+        self.frames.last_mut().unwrap()
     }
 
     pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
@@ -85,8 +99,8 @@ impl Stack {
         class.is_public() || class.identifier.package == self.current_frame().class.package()
     }
 
-    pub fn get_opcode(&self, i: usize) -> u8 {
-        self.current_frame().code.get_opcode(i)
+    pub fn get_opcode(&self) -> u8 {
+        self.current_frame().get_op_code()
     }
 
     pub fn pop_operands(&mut self, n: usize) -> Vec<Word> {
@@ -104,5 +118,17 @@ impl Stack {
 
     pub fn local_variables(&self) -> Vec<Word> {
         self.current_frame().local_variables.clone()
+    }
+
+    pub fn current_method(&self) -> Method {
+        self.current_frame().method.clone()
+    }
+
+    pub fn pc(&mut self, n: usize) {
+        self.current_frame_mut().pc(n);
+    }
+
+    pub fn pop(&mut self) {
+        self.frames.pop().unwrap();
     }
 }

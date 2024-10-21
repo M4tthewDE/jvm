@@ -28,7 +28,6 @@ pub struct Executor {
     initialized_classes: HashMap<ClassIdentifier, Class>,
     class_being_initialized: ClassIdentifier,
     stack: Stack,
-    pc: usize,
 }
 
 impl Executor {
@@ -38,7 +37,6 @@ impl Executor {
             initialized_classes: HashMap::new(),
             class_being_initialized: ClassIdentifier::new(Package::default(), ClassName::default()),
             stack: Stack::new(),
-            pc: 0,
         }
     }
 
@@ -89,9 +87,8 @@ impl Executor {
     }
 
     fn execute_code(&mut self) {
-        self.pc = 0;
         loop {
-            let op_code = self.stack.get_opcode(self.pc);
+            let op_code = self.stack.get_opcode();
             info!("executing op 0x{:x}", op_code);
             let op = OP_METHODS
                 .get(&op_code)
@@ -162,5 +159,9 @@ impl Executor {
         }
 
         class
+    }
+
+    fn pc(&mut self, n: usize) {
+        self.stack.pc(n);
     }
 }

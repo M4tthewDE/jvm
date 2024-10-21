@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use crate::{
     executor::{code::Code, instance::Instance, stack::Word},
-    parser::constant_pool::Index,
+    parser::{constant_pool::Index, descriptor::ReturnDescriptor},
 };
 
 use super::Executor;
 use lazy_static::lazy_static;
 
+const RET: u8 = 0xb1;
 const GETSTATIC: u8 = 0xb2;
 const INVOKESPECIAL: u8 = 0xb7;
 const INVOKESTATIC: u8 = 0xb8;
@@ -27,33 +28,40 @@ lazy_static! {
         h.insert(NEW, new as OpMethod);
         h.insert(DUP, dup as OpMethod);
         h.insert(ALOAD_0, aload_0 as OpMethod);
+        h.insert(RET, ret as OpMethod);
         h
     };
 }
 
 fn invokestatic(executor: &mut Executor) {
-    let indexbyte1 = executor.stack.get_opcode(executor.pc + 1) as u16;
-    let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
+    executor.pc(1);
+    let indexbyte1 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
+    let indexbyte2 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    executor.pc += 3;
     let method_ref = executor.stack.method_ref(&method_index);
     executor.invoke_static(method_ref);
 }
 
 fn getstatic(executor: &mut Executor) {
-    let indexbyte1 = executor.stack.get_opcode(executor.pc + 1) as u16;
-    let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
+    executor.pc(1);
+    let indexbyte1 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
+    let indexbyte2 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
     let field_ref_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    executor.pc += 3;
     executor.resolve_field(&field_ref_index);
     todo!("execute_getstatic");
 }
 
 fn new(executor: &mut Executor) {
-    let indexbyte1 = executor.stack.get_opcode(executor.pc + 1) as u16;
-    let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
+    executor.pc(1);
+    let indexbyte1 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
+    let indexbyte2 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
     let class_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    executor.pc += 3;
     let class_ref = executor.stack.class_ref(&class_index);
     let class = executor.resolve_class(class_ref.class_identifier.clone());
     let instance = Instance::new(class);
@@ -67,14 +75,16 @@ fn dup(executor: &mut Executor) {
     let operands = executor.stack.pop_operands(1);
     executor.stack.push_operand(operands[0].clone());
     executor.stack.push_operand(operands[0].clone());
-    executor.pc += 1;
+    executor.pc(1);
 }
 
 fn invokespecial(executor: &mut Executor) {
-    let indexbyte1 = executor.stack.get_opcode(executor.pc + 1) as u16;
-    let indexbyte2 = executor.stack.get_opcode(executor.pc + 2) as u16;
+    executor.pc(1);
+    let indexbyte1 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
+    let indexbyte2 = executor.stack.get_opcode() as u16;
+    executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    executor.pc += 3;
     let method_ref = executor.stack.method_ref(&method_index);
     let method_descriptor = &method_ref
         .name_and_type
@@ -96,8 +106,14 @@ fn invokespecial(executor: &mut Executor) {
 
 fn aload_0(executor: &mut Executor) {
     let local_variables = executor.stack.local_variables();
-    let reference = local_variables.get(0).unwrap();
+    let reference = local_variables.first().unwrap();
     assert!(matches!(reference, Word::Reference { .. }));
     executor.stack.push_operand(reference.clone());
-    executor.pc += 1;
+    executor.pc(1);
+}
+
+fn ret(executor: &mut Executor) {
+    let method = executor.stack.current_method();
+    assert_eq!(method.descriptor.return_descriptor, ReturnDescriptor::Void);
+    executor.stack.pop();
 }
