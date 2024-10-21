@@ -4,7 +4,7 @@ use crate::{ClassIdentifier, ClassName, Package};
 
 use super::{
     descriptor::{Descriptor, FieldType, MethodDescriptor},
-    parse_i32, parse_u16, parse_u8, parse_vec,
+    parse_i32, parse_u16, parse_u32, parse_u8, parse_vec,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,9 +52,20 @@ impl ConstantPool {
     pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> ConstantPool {
         let mut infos = Vec::with_capacity(count);
         infos.push(ConstantPoolInfo::Reserved);
-        for _ in 0..count - 1 {
+
+        let mut i = 0;
+        loop {
             let info = ConstantPoolInfo::new(c);
+            if matches!(info, ConstantPoolInfo::Long(..)) {
+                i += 2;
+            } else {
+                i += 1;
+            }
             infos.push(info);
+
+            if i == count - 1 {
+                break;
+            }
         }
 
         ConstantPool { infos }
@@ -189,6 +200,7 @@ enum ConstantPoolInfo {
     MethodType {
         descriptor_index: Index,
     },
+    Long(i64),
 }
 
 impl ConstantPoolInfo {
@@ -198,6 +210,7 @@ impl ConstantPoolInfo {
         match tag {
             1 => ConstantPoolInfo::utf8(c),
             3 => ConstantPoolInfo::integer(c),
+            5 => ConstantPoolInfo::long(c),
             7 => ConstantPoolInfo::class_ref(c),
             8 => ConstantPoolInfo::string(c),
             9 => ConstantPoolInfo::field_ref(c),
@@ -286,5 +299,11 @@ impl ConstantPoolInfo {
         ConstantPoolInfo::MethodType {
             descriptor_index: Index::new(parse_u16(c)),
         }
+    }
+
+    fn long(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        let high_bytes = parse_u32(c) as i64;
+        let low_bytes = parse_u32(c) as i64;
+        ConstantPoolInfo::Long((high_bytes << 8) | low_bytes)
     }
 }
