@@ -50,8 +50,7 @@ impl Index {
 
 impl ConstantPool {
     pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> ConstantPool {
-        let mut infos = Vec::with_capacity(count);
-        infos.push(ConstantPoolInfo::Reserved);
+        let mut infos = vec![ConstantPoolInfo::Reserved; count];
 
         let mut i = 0;
         loop {
@@ -61,7 +60,8 @@ impl ConstantPool {
             } else {
                 i += 1;
             }
-            infos.push(info);
+
+            infos[i] = info;
 
             if i == count - 1 {
                 break;
