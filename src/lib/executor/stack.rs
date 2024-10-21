@@ -19,7 +19,7 @@ pub enum Word {
 
 #[derive(Debug)]
 struct Frame {
-    _local_variables: Vec<Word>,
+    local_variables: Vec<Word>,
     class: Class,
     _method: Method,
     code: Code,
@@ -27,7 +27,7 @@ struct Frame {
 impl Frame {
     fn new(class: Class, method: Method, code: Code, operands: Vec<Word>) -> Self {
         Self {
-            _local_variables: operands,
+            local_variables: operands,
             class,
             _method: method,
             code,
@@ -100,5 +100,9 @@ impl Stack {
 
     pub fn push_operand(&mut self, word: Word) {
         self.operand_stack.push(word);
+    }
+
+    pub fn local_variables(&self) -> Vec<Word> {
+        self.current_frame().local_variables.clone()
     }
 }

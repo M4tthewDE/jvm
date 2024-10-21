@@ -95,5 +95,9 @@ fn invokespecial(executor: &mut Executor) {
 }
 
 fn aload_0(executor: &mut Executor) {
-    todo!("aload_0");
+    let local_variables = executor.stack.local_variables();
+    let reference = local_variables.get(0).unwrap();
+    assert!(matches!(reference, Word::Reference { .. }));
+    executor.stack.push_operand(reference.clone());
+    executor.pc += 1;
 }
