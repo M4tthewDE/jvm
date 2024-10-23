@@ -17,12 +17,6 @@ pub struct NameAndType {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FieldRef {
-    pub class_ref: ClassRef,
-    pub name_and_type: NameAndType,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassRef {
     pub class_identifier: ClassIdentifier,
 }
@@ -196,21 +190,6 @@ impl ConstantPool {
     pub fn utf8(&self, index: &Index) -> Option<String> {
         if let ConstantPoolInfo::Utf { text } = self.infos.get(index.index)? {
             Some(text.to_string())
-        } else {
-            None
-        }
-    }
-
-    pub fn field_ref(&self, index: &Index) -> Option<FieldRef> {
-        if let ConstantPoolInfo::FieldRef {
-            class_index,
-            name_and_type_index,
-        } = self.infos.get(index.index).unwrap()
-        {
-            Some(FieldRef {
-                class_ref: self.class_ref(class_index).unwrap(),
-                name_and_type: self.name_and_type_field(name_and_type_index).unwrap(),
-            })
         } else {
             None
         }

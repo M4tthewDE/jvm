@@ -9,7 +9,7 @@ use stack::Stack;
 use tracing::info;
 
 use crate::{
-    parser::constant_pool::{Index, NameAndType},
+    parser::constant_pool::{ConstantPoolItem, Index, NameAndType},
     ClassIdentifier, ClassName, Package,
 };
 
@@ -125,24 +125,31 @@ impl Executor {
     }
 
     fn resolve_field(&mut self, field_index: &Index) {
-        let field_ref = self.stack.field_ref(field_index);
-        let class = self.resolve_class(field_ref.class_ref.class_identifier.clone());
-        let _field = class
-            .field(&field_ref.name_and_type)
-            .unwrap_or_else(|| panic!("field {field_ref:?} not found"));
-        self.initialize_class(class);
-        /*
-         *
-         * On successful resolution of the field, the class or interface that
-         * declared the resolved field is initialized if that class or interface
-         * has not already been initialized (§5.5).
-         * The value of the class or interface field is fetched and pushed onto
-         * the operand stack.
-         *
-         * TODO: What does "the value" mean?
-         *
-         */
-        todo!("")
+        if let ConstantPoolItem::FieldRef {
+            class_identifier,
+            name_and_type,
+        } = self.stack.resolve_in_cp(field_index)
+        {
+            let class = self.resolve_class(class_identifier.clone());
+            let _field = class.field(&name_and_type).unwrap_or_else(|| {
+                panic!("field {name_and_type:?} not found in class {class_identifier}")
+            });
+            self.initialize_class(class);
+            /*
+             *
+             * On successful resolution of the field, the class or interface that
+             * declared the resolved field is initialized if that class or interface
+             * has not already been initialized (§5.5).
+             * The value of the class or interface field is fetched and pushed onto
+             * the operand stack.
+             *
+             * TODO: What does "the value" mean?
+             *
+             */
+            todo!("")
+        } else {
+            panic!("no field reference found at {field_index:?}");
+        }
     }
 
     fn resolve_class(&mut self, identifier: ClassIdentifier) -> Class {

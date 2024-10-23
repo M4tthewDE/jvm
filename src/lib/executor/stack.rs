@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, FieldRef, Index};
+use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, Index};
 
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
@@ -40,10 +40,6 @@ impl Frame {
         self.class.resolve_in_cp(index).unwrap()
     }
 
-    fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
-        self.class.field_ref(field_ref_index).unwrap()
-    }
-
     fn class_ref(&self, class_index: &Index) -> ClassRef {
         self.class.class_ref(class_index).unwrap()
     }
@@ -81,10 +77,6 @@ impl Stack {
 
     pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
         self.frames.push(Frame::new(class, method, code, operands))
-    }
-
-    pub fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
-        self.current_frame().field_ref(field_ref_index)
     }
 
     pub fn class_ref(&self, class_index: &Index) -> ClassRef {
