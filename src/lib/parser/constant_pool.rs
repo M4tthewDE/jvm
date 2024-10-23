@@ -115,7 +115,7 @@ impl ConstantPool {
                 class_index,
                 name_and_type_index,
             } => {
-                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
                     let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
                     let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
@@ -131,7 +131,7 @@ impl ConstantPool {
                 class_index,
                 name_and_type_index,
             } => {
-                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
                     let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
                     let name_and_type = self.name_and_type_method(&name_and_type_index)?;
 
@@ -147,7 +147,7 @@ impl ConstantPool {
                 class_index,
                 name_and_type_index,
             } => {
-                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
                     let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
                     let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
@@ -162,7 +162,7 @@ impl ConstantPool {
             ConstantPoolInfo::String { string_index } => Some(ConstantPoolItem::String {
                 value: self.utf8(&string_index)?,
             }),
-            ConstantPoolInfo::ClassRef { name_index } => Some(ConstantPoolItem::ClassInfo {
+            ConstantPoolInfo::ClassInfo { name_index } => Some(ConstantPoolItem::ClassInfo {
                 identifier: ClassIdentifier::from_utf8(self.utf8(&name_index)?),
             }),
             ConstantPoolInfo::NameAndType {
@@ -255,8 +255,7 @@ pub enum ConstantPoolInfo {
     String {
         string_index: Index,
     },
-    // TODO: shouldn't this be called ClassInfo?
-    ClassRef {
+    ClassInfo {
         name_index: Index,
     },
     NameAndType {
@@ -290,7 +289,7 @@ impl ConstantPoolInfo {
             1 => ConstantPoolInfo::utf8(c),
             3 => ConstantPoolInfo::integer(c),
             5 => ConstantPoolInfo::long(c),
-            7 => ConstantPoolInfo::class_ref(c),
+            7 => ConstantPoolInfo::class_info(c),
             8 => ConstantPoolInfo::string(c),
             9 => ConstantPoolInfo::field_ref(c),
             10 => ConstantPoolInfo::method_ref(c),
@@ -303,8 +302,8 @@ impl ConstantPoolInfo {
         }
     }
 
-    fn class_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::ClassRef {
+    fn class_info(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::ClassInfo {
             name_index: Index::new(parse_u16(c)),
         }
     }
