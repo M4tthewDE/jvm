@@ -17,6 +17,7 @@ pub enum Word {
     _Boolean(bool),
     _ReturnAdress(usize),
     Reference { _instance: Instance },
+    Class { _class: Class },
     _Null,
 }
 
