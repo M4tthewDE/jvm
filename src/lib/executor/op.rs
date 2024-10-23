@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     executor::{code::Code, instance::Instance, stack::Word},
-    parser::{
-        constant_pool::{ConstantPoolItem, Index},
-        descriptor::ReturnDescriptor,
-    },
+    parser::{constant_pool::Index, descriptor::ReturnDescriptor},
 };
 
 use super::Executor;
@@ -45,15 +42,9 @@ fn invokestatic(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    if let ConstantPoolItem::MethodRef {
-        class_identifier,
-        name_and_type,
-    } = executor.stack.resolve_in_cp(&method_index)
-    {
-        executor.invoke_static(class_identifier, name_and_type);
-    } else {
-        panic!("no method reference found at {method_index:?}");
-    }
+
+    let (class_identifier, name_and_type) = executor.stack.lookup_method(&method_index).unwrap();
+    executor.invoke_static(class_identifier, name_and_type);
 }
 
 fn getstatic(executor: &mut Executor) {
@@ -62,6 +53,7 @@ fn getstatic(executor: &mut Executor) {
     executor.pc(1);
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
+
     let field_ref_index = Index::new((indexbyte1 << 8) | indexbyte2);
     executor.resolve_field(&field_ref_index);
     todo!("execute_getstatic");
@@ -74,16 +66,14 @@ fn new(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let class_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    if let ConstantPoolItem::ClassInfo { identifier } = executor.stack.resolve_in_cp(&class_index) {
-        let class = executor.resolve_class(identifier);
-        let instance = Instance::new(class);
-        let reference = Word::Reference {
-            _instance: instance,
-        };
-        executor.stack.push_operand(reference);
-    } else {
-        panic!("no class reference found at {class_index:?}");
-    }
+
+    let identifier = executor.stack.lookup_class(&class_index).unwrap();
+    let class = executor.resolve_class(identifier);
+    let instance = Instance::new(class);
+    let reference = Word::Reference {
+        _instance: instance,
+    };
+    executor.stack.push_operand(reference);
 }
 
 fn dup(executor: &mut Executor) {
@@ -100,26 +90,20 @@ fn invokespecial(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    if let ConstantPoolItem::MethodRef {
-        class_identifier,
-        name_and_type,
-    } = executor.stack.resolve_in_cp(&method_index)
-    {
-        let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
-        let class = executor.resolve_class(class_identifier);
-        let method = class
-            .method(&name_and_type.name, method_descriptor)
-            .unwrap();
-        let code = Code::new(method.code_attribute().unwrap());
-        let operands = executor
-            .stack
-            .pop_operands(method_descriptor.parameters.len() + 1);
-        executor.stack.create(class, method, code, operands);
-        executor.execute_code();
-        todo!("invoke_special");
-    } else {
-        panic!("no method reference found at {method_index:?}");
-    }
+
+    let (class_identifier, name_and_type) = executor.stack.lookup_method(&method_index).unwrap();
+    let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
+    let class = executor.resolve_class(class_identifier);
+    let method = class
+        .method(&name_and_type.name, method_descriptor)
+        .unwrap();
+    let code = Code::new(method.code_attribute().unwrap());
+    let operands = executor
+        .stack
+        .pop_operands(method_descriptor.parameters.len() + 1);
+    executor.stack.create(class, method, code, operands);
+    executor.execute_code();
+    todo!("invoke_special");
 }
 
 fn aload_0(executor: &mut Executor) {
@@ -139,7 +123,6 @@ fn ret(executor: &mut Executor) {
 fn ldc(executor: &mut Executor) {
     executor.pc(1);
     let index = Index::new(executor.stack.get_opcode());
-    let cp_item = executor.stack.resolve_in_cp(&index);
-    dbg!(cp_item);
+    let _cp_item = executor.stack.resolve_in_cp(&index);
     todo!("ldc");
 }

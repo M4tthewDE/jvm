@@ -1,4 +1,7 @@
-use crate::parser::constant_pool::{ConstantPoolItem, Index};
+use crate::{
+    parser::constant_pool::{ConstantPoolItem, Index, NameAndType},
+    ClassIdentifier,
+};
 
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
@@ -36,8 +39,8 @@ impl Frame {
         }
     }
 
-    fn resolve_in_cp(&self, index: &Index) -> ConstantPoolItem {
-        self.class.resolve_in_cp(index).unwrap()
+    fn resolve_in_cp(&self, index: &Index) -> Option<ConstantPoolItem> {
+        self.class.resolve_in_cp(index)
     }
 
     fn pc(&mut self, n: usize) {
@@ -113,6 +116,40 @@ impl Stack {
     }
 
     pub fn resolve_in_cp(&self, index: &Index) -> ConstantPoolItem {
-        self.current_frame().resolve_in_cp(index)
+        self.current_frame().resolve_in_cp(index).unwrap()
+    }
+
+    pub fn lookup_field(&self, index: &Index) -> Option<(ClassIdentifier, NameAndType)> {
+        if let ConstantPoolItem::FieldRef {
+            class_identifier,
+            name_and_type,
+        } = self.current_frame().resolve_in_cp(index)?
+        {
+            Some((class_identifier, name_and_type))
+        } else {
+            None
+        }
+    }
+
+    pub fn lookup_method(&self, index: &Index) -> Option<(ClassIdentifier, NameAndType)> {
+        if let ConstantPoolItem::MethodRef {
+            class_identifier,
+            name_and_type,
+        } = self.current_frame().resolve_in_cp(index)?
+        {
+            Some((class_identifier, name_and_type))
+        } else {
+            None
+        }
+    }
+
+    pub fn lookup_class(&self, index: &Index) -> Option<ClassIdentifier> {
+        if let ConstantPoolItem::ClassInfo { identifier } =
+            self.current_frame().resolve_in_cp(index)?
+        {
+            Some(identifier)
+        } else {
+            None
+        }
     }
 }
