@@ -7,9 +7,6 @@ use super::{
     parse_i32, parse_u16, parse_u32, parse_u8, parse_vec,
 };
 
-// TODO: there should only be one function that resolves a constant pool element
-// the return value is an enum with all possible types
-// the caller can then decide what it does with each possible type
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
     pub name: String,
@@ -50,7 +47,7 @@ pub enum ConstantPoolItem {
         val: i64,
     },
     InvokeDynamic {
-        bootstrap_method_attr_index: Index,
+        bootstrap_method_attr_index: u16,
         name_and_type: NameAndType,
     },
     MethodHandle {
@@ -266,8 +263,7 @@ pub enum ConstantPoolInfo {
         text: String,
     },
     InvokeDynamic {
-        // TODO: I don't think this should be Index
-        bootstrap_method_attr_index: Index,
+        bootstrap_method_attr_index: u16,
         name_and_type_index: Index,
     },
     Integer(i32),
@@ -351,7 +347,7 @@ impl ConstantPoolInfo {
 
     fn invoke_dynamic(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
         ConstantPoolInfo::InvokeDynamic {
-            bootstrap_method_attr_index: Index::new(parse_u16(c)),
+            bootstrap_method_attr_index: parse_u16(c),
             name_and_type_index: Index::new(parse_u16(c)),
         }
     }
