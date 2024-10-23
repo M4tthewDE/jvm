@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use crate::{ClassIdentifier, ClassName, Package};
+use crate::ClassIdentifier;
 
 use super::{
     descriptor::{Descriptor, FieldType, MethodDescriptor},
@@ -14,11 +14,6 @@ use super::{
 pub struct NameAndType {
     pub name: String,
     pub descriptor: Descriptor,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClassRef {
-    pub class_identifier: ClassIdentifier,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,37 +115,49 @@ impl ConstantPool {
                 class_index,
                 name_and_type_index,
             } => {
-                let class_identifier = self.class_ref(&class_index)?.class_identifier;
-                let name_and_type = self.name_and_type_field(&name_and_type_index)?;
+                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
-                Some(ConstantPoolItem::FieldRef {
-                    class_identifier,
-                    name_and_type,
-                })
+                    Some(ConstantPoolItem::FieldRef {
+                        class_identifier,
+                        name_and_type,
+                    })
+                } else {
+                    None
+                }
             }
             ConstantPoolInfo::MethodRef {
                 class_index,
                 name_and_type_index,
             } => {
-                let class_identifier = self.class_ref(&class_index)?.class_identifier;
-                let name_and_type = self.name_and_type_method(&name_and_type_index)?;
+                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let name_and_type = self.name_and_type_method(&name_and_type_index)?;
 
-                Some(ConstantPoolItem::MethodRef {
-                    class_identifier,
-                    name_and_type,
-                })
+                    Some(ConstantPoolItem::MethodRef {
+                        class_identifier,
+                        name_and_type,
+                    })
+                } else {
+                    None
+                }
             }
             ConstantPoolInfo::InterfaceMethodRef {
                 class_index,
                 name_and_type_index,
             } => {
-                let class_identifier = self.class_ref(&class_index)?.class_identifier;
-                let name_and_type = self.name_and_type_method(&name_and_type_index)?;
+                if let ConstantPoolInfo::ClassRef { name_index } = self.get(&class_index)? {
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
-                Some(ConstantPoolItem::InterfaceMethodRef {
-                    class_identifier,
-                    name_and_type,
-                })
+                    Some(ConstantPoolItem::InterfaceMethodRef {
+                        class_identifier,
+                        name_and_type,
+                    })
+                } else {
+                    None
+                }
             }
             ConstantPoolInfo::String { string_index } => Some(ConstantPoolItem::String {
                 value: self.utf8(&string_index)?,
@@ -190,20 +197,6 @@ impl ConstantPool {
     pub fn utf8(&self, index: &Index) -> Option<String> {
         if let ConstantPoolInfo::Utf { text } = self.infos.get(index.index)? {
             Some(text.to_string())
-        } else {
-            None
-        }
-    }
-
-    pub fn class_ref(&self, index: &Index) -> Option<ClassRef> {
-        if let ConstantPoolInfo::ClassRef { name_index } = self.get(index).unwrap() {
-            let text = self.utf8(&name_index).unwrap();
-            let text = text.replace("/", ".");
-            let parts: Vec<&str> = text.split(".").collect();
-            let name = ClassName::new(parts.last().unwrap().to_string());
-            let package = Package::new(parts[..parts.len() - 1].join("."));
-            let class_identifier = ClassIdentifier::new(package, name);
-            Some(ClassRef { class_identifier })
         } else {
             None
         }

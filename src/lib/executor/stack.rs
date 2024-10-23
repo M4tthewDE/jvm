@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, Index};
+use crate::parser::constant_pool::{ConstantPoolItem, Index};
 
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
@@ -40,10 +40,6 @@ impl Frame {
         self.class.resolve_in_cp(index).unwrap()
     }
 
-    fn class_ref(&self, class_index: &Index) -> ClassRef {
-        self.class.class_ref(class_index).unwrap()
-    }
-
     fn pc(&mut self, n: usize) {
         self.pc += n;
     }
@@ -77,10 +73,6 @@ impl Stack {
 
     pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
         self.frames.push(Frame::new(class, method, code, operands))
-    }
-
-    pub fn class_ref(&self, class_index: &Index) -> ClassRef {
-        self.current_frame().class_ref(class_index)
     }
 
     pub fn can_access(&self, class: &Class) -> bool {

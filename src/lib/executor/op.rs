@@ -74,13 +74,16 @@ fn new(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let class_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    let class_ref = executor.stack.class_ref(&class_index);
-    let class = executor.resolve_class(class_ref.class_identifier.clone());
-    let instance = Instance::new(class);
-    let reference = Word::Reference {
-        _instance: instance,
-    };
-    executor.stack.push_operand(reference);
+    if let ConstantPoolItem::ClassInfo { identifier } = executor.stack.resolve_in_cp(&class_index) {
+        let class = executor.resolve_class(identifier);
+        let instance = Instance::new(class);
+        let reference = Word::Reference {
+            _instance: instance,
+        };
+        executor.stack.push_operand(reference);
+    } else {
+        panic!("no class reference found at {class_index:?}");
+    }
 }
 
 fn dup(executor: &mut Executor) {
