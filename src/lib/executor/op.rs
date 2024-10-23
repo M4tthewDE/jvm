@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use crate::{
     executor::{code::Code, instance::Instance, stack::Word},
-    parser::{constant_pool::Index, descriptor::ReturnDescriptor},
+    parser::{
+        constant_pool::{ConstantPoolItem, Index},
+        descriptor::ReturnDescriptor,
+    },
 };
 
 use super::Executor;
@@ -42,8 +45,15 @@ fn invokestatic(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    let method_ref = executor.stack.method_ref(&method_index);
-    executor.invoke_static(method_ref);
+    if let ConstantPoolItem::MethodRef {
+        class_identifier,
+        name_and_type,
+    } = executor.stack.resolve_in_cp(&method_index)
+    {
+        executor.invoke_static(class_identifier, name_and_type);
+    } else {
+        panic!("no method reference found at {method_index:?}");
+    }
 }
 
 fn getstatic(executor: &mut Executor) {
@@ -87,23 +97,26 @@ fn invokespecial(executor: &mut Executor) {
     let indexbyte2 = executor.stack.get_opcode() as u16;
     executor.pc(1);
     let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    let method_ref = executor.stack.method_ref(&method_index);
-    let method_descriptor = &method_ref
-        .name_and_type
-        .descriptor
-        .method_descriptor()
-        .unwrap();
-    let class = executor.resolve_class(method_ref.class.class_identifier);
-    let method = class
-        .method(&method_ref.name_and_type.name, method_descriptor)
-        .unwrap();
-    let code = Code::new(method.code_attribute().unwrap());
-    let operands = executor
-        .stack
-        .pop_operands(method_descriptor.parameters.len() + 1);
-    executor.stack.create(class, method, code, operands);
-    executor.execute_code();
-    todo!("invoke_special");
+    if let ConstantPoolItem::MethodRef {
+        class_identifier,
+        name_and_type,
+    } = executor.stack.resolve_in_cp(&method_index)
+    {
+        let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
+        let class = executor.resolve_class(class_identifier);
+        let method = class
+            .method(&name_and_type.name, method_descriptor)
+            .unwrap();
+        let code = Code::new(method.code_attribute().unwrap());
+        let operands = executor
+            .stack
+            .pop_operands(method_descriptor.parameters.len() + 1);
+        executor.stack.create(class, method, code, operands);
+        executor.execute_code();
+        todo!("invoke_special");
+    } else {
+        panic!("no method reference found at {method_index:?}");
+    }
 }
 
 fn aload_0(executor: &mut Executor) {

@@ -9,7 +9,7 @@ use stack::Stack;
 use tracing::info;
 
 use crate::{
-    parser::constant_pool::{Index, MethodRef},
+    parser::constant_pool::{Index, NameAndType},
     ClassIdentifier, ClassName, Package,
 };
 
@@ -97,23 +97,17 @@ impl Executor {
         }
     }
 
-    fn invoke_static(&mut self, method_ref: MethodRef) {
-        let class = self
-            .class_loader
-            .load(method_ref.class.class_identifier.clone());
+    fn invoke_static(&mut self, class_identifier: ClassIdentifier, name_and_type: NameAndType) {
+        let class = self.class_loader.load(class_identifier.clone());
         self.initialize_class(class.clone());
-        let method_descriptor = &method_ref
-            .name_and_type
-            .descriptor
-            .method_descriptor()
-            .unwrap();
+        let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
 
         let operands = self.stack.pop_operands(method_descriptor.parameters.len());
-        if class.is_native(&method_ref.name_and_type.name, method_descriptor) {
+        if class.is_native(&name_and_type.name, method_descriptor) {
             if let Some(word) = native::invoke_static(
                 self,
                 class.identifier,
-                method_ref.name_and_type.name,
+                name_and_type.name,
                 method_descriptor.parameters.clone(),
                 operands,
             ) {
@@ -121,7 +115,7 @@ impl Executor {
             }
         } else {
             let method = class
-                .method(&method_ref.name_and_type.name, method_descriptor)
+                .method(&name_and_type.name, method_descriptor)
                 .unwrap();
             let code = Code::new(method.code_attribute().unwrap());
             self.stack.create(class, method, code, operands);

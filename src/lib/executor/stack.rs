@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, FieldRef, Index, MethodRef};
+use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, FieldRef, Index};
 
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
@@ -42,10 +42,6 @@ impl Frame {
 
     fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
         self.class.field_ref(field_ref_index).unwrap()
-    }
-
-    fn method_ref(&self, method_index: &Index) -> MethodRef {
-        self.class.method_ref(method_index).unwrap()
     }
 
     fn class_ref(&self, class_index: &Index) -> ClassRef {
@@ -93,10 +89,6 @@ impl Stack {
 
     pub fn class_ref(&self, class_index: &Index) -> ClassRef {
         self.current_frame().class_ref(class_index)
-    }
-
-    pub fn method_ref(&self, method_index: &Index) -> MethodRef {
-        self.current_frame().method_ref(method_index)
     }
 
     pub fn can_access(&self, class: &Class) -> bool {

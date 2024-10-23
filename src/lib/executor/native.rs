@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     parser::{
-        constant_pool::{ClassRef, MethodRef, NameAndType},
+        constant_pool::NameAndType,
         descriptor::{Descriptor, FieldType, MethodDescriptor, ReturnDescriptor},
     },
     ClassIdentifier,
@@ -45,18 +45,14 @@ pub fn invoke_static(
 }
 
 fn register_natives(executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
-    let method_ref = MethodRef {
-        class: ClassRef {
-            class_identifier: ClassIdentifier::from("java.lang".to_string(), "System".to_string()),
-        },
-        name_and_type: NameAndType {
-            name: "initPhase1".to_string(),
-            descriptor: Descriptor::Method(MethodDescriptor {
-                parameters: vec![],
-                return_descriptor: ReturnDescriptor::Void,
-            }),
-        },
+    let class_identifier = ClassIdentifier::from("java.lang".to_string(), "System".to_string());
+    let name_and_type = NameAndType {
+        name: "initPhase1".to_string(),
+        descriptor: Descriptor::Method(MethodDescriptor {
+            parameters: vec![],
+            return_descriptor: ReturnDescriptor::Void,
+        }),
     };
-    executor.invoke_static(method_ref);
+    executor.invoke_static(class_identifier, name_and_type);
     None
 }
