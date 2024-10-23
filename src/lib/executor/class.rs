@@ -3,7 +3,9 @@ use std::fmt::Display;
 use crate::{
     parser::{
         class::{AccessFlag, ClassFile},
-        constant_pool::{ClassRef, ConstantPool, FieldRef, Index, MethodRef, NameAndType},
+        constant_pool::{
+            ClassRef, ConstantPool, ConstantPoolItem, FieldRef, Index, MethodRef, NameAndType,
+        },
         descriptor::MethodDescriptor,
     },
     ClassIdentifier, Package,
@@ -97,6 +99,10 @@ impl Class {
         }
 
         None
+    }
+
+    pub fn resolve_in_cp(&self, index: &Index) -> Option<ConstantPoolItem> {
+        self.constant_pool.resolve(index)
     }
 
     pub fn field_ref(&self, field_ref_index: &Index) -> Option<FieldRef> {

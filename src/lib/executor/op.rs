@@ -8,6 +8,7 @@ use crate::{
 use super::Executor;
 use lazy_static::lazy_static;
 
+const LDC: u8 = 0x12;
 const RET: u8 = 0xb1;
 const GETSTATIC: u8 = 0xb2;
 const INVOKESPECIAL: u8 = 0xb7;
@@ -29,6 +30,7 @@ lazy_static! {
         h.insert(DUP, dup as OpMethod);
         h.insert(ALOAD_0, aload_0 as OpMethod);
         h.insert(RET, ret as OpMethod);
+        h.insert(LDC, ldc as OpMethod);
         h
     };
 }
@@ -116,4 +118,12 @@ fn ret(executor: &mut Executor) {
     let method = executor.stack.current_method();
     assert_eq!(method.descriptor.return_descriptor, ReturnDescriptor::Void);
     executor.stack.pop();
+}
+
+fn ldc(executor: &mut Executor) {
+    executor.pc(1);
+    let index = Index::new(executor.stack.get_opcode());
+    let cp_item = executor.stack.resolve_in_cp(&index);
+    dbg!(cp_item);
+    todo!("ldc");
 }

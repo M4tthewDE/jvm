@@ -7,6 +7,9 @@ use super::{
     parse_i32, parse_u16, parse_u32, parse_u8, parse_vec,
 };
 
+// TODO: there should only be one function that resolves a constant pool element
+// the return value is an enum with all possible types
+// the caller can then decide what it does with each possible type
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NameAndType {
     pub name: String,
@@ -28,6 +31,53 @@ pub struct ClassRef {
 pub struct MethodRef {
     pub class: ClassRef,
     pub name_and_type: NameAndType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ConstantPoolItem {
+    Reserved,
+    ClassInfo {
+        name: String,
+    },
+    FieldRef {
+        class: Box<ConstantPoolItem>,
+        name_and_type: Box<ConstantPoolItem>,
+    },
+    MethodRef {
+        class: Box<ConstantPoolItem>,
+        name_and_type: Box<ConstantPoolItem>,
+    },
+    InterfaceMethodRef {
+        class: Box<ConstantPoolItem>,
+        name_and_type: Box<ConstantPoolItem>,
+    },
+    MethodType {
+        descriptor: String,
+    },
+    String {
+        value: String,
+    },
+    Utf {
+        text: String,
+    },
+    Integer {
+        val: i32,
+    },
+    Long {
+        val: i64,
+    },
+    NameAndType {
+        name: String,
+        descriptor: String,
+    },
+    InvokeDynamic {
+        bootstrap_method_attr_index: Index,
+        name_and_type: Box<ConstantPoolItem>,
+    },
+    MethodHandle {
+        reference_kind: u8,
+        reference: Box<ConstantPoolItem>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,6 +123,72 @@ impl ConstantPool {
 
     fn get(&self, index: &Index) -> Option<ConstantPoolInfo> {
         self.infos.get(index.index).cloned()
+    }
+
+    pub fn resolve(&self, index: &Index) -> Option<ConstantPoolItem> {
+        self.get(index).map(|i| self.resolve_cp_item(i))?
+    }
+
+    fn resolve_cp_item(&self, cp_item: ConstantPoolInfo) -> Option<ConstantPoolItem> {
+        match cp_item {
+            ConstantPoolInfo::Reserved => Some(ConstantPoolItem::Reserved),
+            ConstantPoolInfo::FieldRef {
+                class_index,
+                name_and_type_index,
+            } => Some(ConstantPoolItem::FieldRef {
+                class: Box::new(self.resolve(&class_index)?),
+                name_and_type: Box::new(self.resolve(&name_and_type_index)?),
+            }),
+            ConstantPoolInfo::MethodRef {
+                class_index,
+                name_and_type_index,
+            } => Some(ConstantPoolItem::MethodRef {
+                class: Box::new(self.resolve(&class_index)?),
+                name_and_type: Box::new(self.resolve(&name_and_type_index)?),
+            }),
+            ConstantPoolInfo::InterfaceMethodRef {
+                class_index,
+                name_and_type_index,
+            } => Some(ConstantPoolItem::InterfaceMethodRef {
+                class: Box::new(self.resolve(&class_index)?),
+                name_and_type: Box::new(self.resolve(&name_and_type_index)?),
+            }),
+            ConstantPoolInfo::String { string_index } => Some(ConstantPoolItem::String {
+                value: self.utf8(&string_index)?,
+            }),
+            ConstantPoolInfo::ClassRef { name_index } => Some(ConstantPoolItem::ClassInfo {
+                name: self.utf8(&name_index)?,
+            }),
+            ConstantPoolInfo::NameAndType {
+                name_index,
+                descriptor_index,
+            } => Some(ConstantPoolItem::NameAndType {
+                name: self.utf8(&name_index)?,
+                descriptor: self.utf8(&descriptor_index)?,
+            }),
+            ConstantPoolInfo::Utf { text } => Some(ConstantPoolItem::Utf { text }),
+            ConstantPoolInfo::InvokeDynamic {
+                bootstrap_method_attr_index,
+                name_and_type_index,
+            } => Some(ConstantPoolItem::InvokeDynamic {
+                bootstrap_method_attr_index,
+                name_and_type: Box::new(self.resolve(&name_and_type_index)?),
+            }),
+            ConstantPoolInfo::Integer(val) => Some(ConstantPoolItem::Integer { val }),
+            ConstantPoolInfo::MethodHandle {
+                reference_kind,
+                reference_index,
+            } => Some(ConstantPoolItem::MethodHandle {
+                reference_kind,
+                reference: Box::new(self.resolve(&reference_index)?),
+            }),
+            ConstantPoolInfo::MethodType { descriptor_index } => {
+                Some(ConstantPoolItem::MethodType {
+                    descriptor: self.utf8(&descriptor_index)?,
+                })
+            }
+            ConstantPoolInfo::Long(val) => Some(ConstantPoolItem::Long { val }),
+        }
     }
 
     pub fn utf8(&self, index: &Index) -> Option<String> {
@@ -178,6 +294,7 @@ enum ConstantPoolInfo {
     String {
         string_index: Index,
     },
+    // TODO: shouldn't this be called ClassInfo?
     ClassRef {
         name_index: Index,
     },
@@ -189,6 +306,7 @@ enum ConstantPoolInfo {
         text: String,
     },
     InvokeDynamic {
+        // TODO: I don't think this should be Index
         bootstrap_method_attr_index: Index,
         name_and_type_index: Index,
     },

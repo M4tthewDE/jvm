@@ -98,7 +98,6 @@ impl Executor {
     }
 
     fn invoke_static(&mut self, method_ref: MethodRef) {
-        // TODO what about the stack?
         let class = self
             .class_loader
             .load(method_ref.class.class_identifier.clone());

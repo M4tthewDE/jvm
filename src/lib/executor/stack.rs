@@ -1,4 +1,4 @@
-use crate::parser::constant_pool::{ClassRef, FieldRef, Index, MethodRef};
+use crate::parser::constant_pool::{ClassRef, ConstantPoolItem, FieldRef, Index, MethodRef};
 
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
@@ -34,6 +34,10 @@ impl Frame {
             code,
             pc: 0,
         }
+    }
+
+    fn resolve_in_cp(&self, index: &Index) -> ConstantPoolItem {
+        self.class.resolve_in_cp(index).unwrap()
     }
 
     fn field_ref(&self, field_ref_index: &Index) -> FieldRef {
@@ -130,5 +134,9 @@ impl Stack {
 
     pub fn pop(&mut self) {
         self.frames.pop().unwrap();
+    }
+
+    pub fn resolve_in_cp(&self, index: &Index) -> ConstantPoolItem {
+        self.current_frame().resolve_in_cp(index)
     }
 }
