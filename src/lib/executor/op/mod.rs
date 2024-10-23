@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-
 use crate::{
     executor::{code::Code, instance::Instance, stack::Word},
     parser::{constant_pool::Index, descriptor::ReturnDescriptor},
 };
 
 use super::Executor;
-use lazy_static::lazy_static;
+
+mod invoke_static;
 
 const LDC: u8 = 0x12;
 const RET: u8 = 0xb1;
@@ -18,33 +17,19 @@ const DUP: u8 = 0x59;
 const ALOAD_0: u8 = 0x2a;
 
 type OpMethod = fn(&mut Executor);
-type Op = u8;
 
-lazy_static! {
-    pub static ref OP_METHODS: HashMap<Op, OpMethod> = {
-        let mut h = HashMap::new();
-        h.insert(GETSTATIC, getstatic as OpMethod);
-        h.insert(INVOKESPECIAL, invokespecial as OpMethod);
-        h.insert(INVOKESTATIC, invokestatic as OpMethod);
-        h.insert(NEW, new as OpMethod);
-        h.insert(DUP, dup as OpMethod);
-        h.insert(ALOAD_0, aload_0 as OpMethod);
-        h.insert(RET, ret as OpMethod);
-        h.insert(LDC, ldc as OpMethod);
-        h
-    };
-}
-
-fn invokestatic(executor: &mut Executor) {
-    executor.pc(1);
-    let indexbyte1 = executor.stack.get_opcode() as u16;
-    executor.pc(1);
-    let indexbyte2 = executor.stack.get_opcode() as u16;
-    executor.pc(1);
-    let method_index = Index::new((indexbyte1 << 8) | indexbyte2);
-
-    let (class_identifier, name_and_type) = executor.stack.lookup_method(&method_index).unwrap();
-    executor.invoke_static(class_identifier, name_and_type);
+pub fn get_op(op_code: &u8) -> Option<OpMethod> {
+    match *op_code {
+        INVOKESTATIC => Some(invoke_static::perform as OpMethod),
+        GETSTATIC => Some(getstatic as OpMethod),
+        INVOKESPECIAL => Some(invokespecial as OpMethod),
+        NEW => Some(new as OpMethod),
+        DUP => Some(dup as OpMethod),
+        ALOAD_0 => Some(aload_0 as OpMethod),
+        RET => Some(ret as OpMethod),
+        LDC => Some(ldc as OpMethod),
+        _ => None,
+    }
 }
 
 fn getstatic(executor: &mut Executor) {

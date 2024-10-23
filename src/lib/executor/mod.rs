@@ -4,7 +4,6 @@ use class::Class;
 use code::Code;
 use loader::ClassLoader;
 use method::Method;
-use op::OP_METHODS;
 use stack::Stack;
 use tracing::info;
 
@@ -90,8 +89,7 @@ impl Executor {
         loop {
             let op_code = self.stack.get_opcode();
             info!("executing op 0x{:x}", op_code);
-            let op = OP_METHODS
-                .get(&op_code)
+            let op = op::get_op(&op_code)
                 .unwrap_or_else(|| panic!("Unknown instruction 0x{:x}", op_code));
             op(self);
         }
