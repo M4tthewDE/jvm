@@ -5,6 +5,7 @@ mod dup;
 mod get_static;
 mod invoke_special;
 mod invoke_static;
+mod invoke_virtual;
 mod ldc;
 mod new;
 mod ret;
@@ -12,6 +13,7 @@ mod ret;
 const LDC: u8 = 0x12;
 const RET: u8 = 0xb1;
 const GETSTATIC: u8 = 0xb2;
+const INVOKEVIRTUAL: u8 = 0xb6;
 const INVOKESPECIAL: u8 = 0xb7;
 const INVOKESTATIC: u8 = 0xb8;
 const NEW: u8 = 0xbb;
@@ -24,6 +26,7 @@ pub fn get_op(op_code: &u8) -> Option<OpMethod> {
     match *op_code {
         INVOKESTATIC => Some(invoke_static::perform as OpMethod),
         GETSTATIC => Some(get_static::perform as OpMethod),
+        INVOKEVIRTUAL => Some(invoke_virtual::perform as OpMethod),
         INVOKESPECIAL => Some(invoke_special::perform as OpMethod),
         NEW => Some(new::perform as OpMethod),
         DUP => Some(dup::perform as OpMethod),
