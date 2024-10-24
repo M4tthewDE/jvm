@@ -6,6 +6,7 @@ use crate::{
 pub fn perform(executor: &mut Executor) {
     executor.pc(1);
     let index = Index::new(executor.stack.get_opcode());
+    executor.pc(1);
     let cp_item = executor.stack.resolve_in_cp(&index);
 
     assert!(
