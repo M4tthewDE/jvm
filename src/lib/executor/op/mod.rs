@@ -3,6 +3,7 @@ use super::Executor;
 mod aload;
 mod dup;
 mod get_static;
+mod iconst;
 mod invoke_special;
 mod invoke_static;
 mod invoke_virtual;
@@ -10,6 +11,7 @@ mod ldc;
 mod new;
 mod ret;
 
+const ICONST_0: u8 = 0x3;
 const LDC: u8 = 0x12;
 const RET: u8 = 0xb1;
 const GETSTATIC: u8 = 0xb2;
@@ -33,6 +35,7 @@ pub fn get_op(op_code: &u8) -> Option<OpMethod> {
         ALOAD_0 => Some(aload::aload_0 as OpMethod),
         RET => Some(ret::perform as OpMethod),
         LDC => Some(ldc::perform as OpMethod),
+        ICONST_0 => Some(iconst::iconst_0 as OpMethod),
         _ => None,
     }
 }

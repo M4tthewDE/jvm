@@ -9,7 +9,7 @@ use super::{class::Class, code::Code, instance::Instance, method::Method};
 pub enum Word {
     _Byte(i8),
     _Short(i16),
-    _Int(i32),
+    Int(i32),
     _Long(i64),
     _Char(u16),
     _Float(f32),

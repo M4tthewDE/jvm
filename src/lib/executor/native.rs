@@ -22,7 +22,15 @@ lazy_static! {
                 "registerNatives".to_string(),
                 vec![],
             ),
-            register_natives as NativeMethod,
+            register_natives_system as NativeMethod,
+        );
+        h.insert(
+            (
+                ClassIdentifier::from("java.lang".to_string(), "Class".to_string()),
+                "registerNatives".to_string(),
+                vec![],
+            ),
+            register_natives_class as NativeMethod,
         );
         h
     };
@@ -44,7 +52,7 @@ pub fn invoke_static(
         })(executor, operands)
 }
 
-fn register_natives(executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
+fn register_natives_system(executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
     let class_identifier = ClassIdentifier::from("java.lang".to_string(), "System".to_string());
     let name_and_type = NameAndType {
         name: "initPhase1".to_string(),
@@ -54,5 +62,9 @@ fn register_natives(executor: &mut Executor, _operands: Vec<Word>) -> Option<Wor
         }),
     };
     executor.invoke_static(class_identifier, name_and_type);
+    None
+}
+
+fn register_natives_class(_executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
     None
 }
