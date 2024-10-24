@@ -1,6 +1,7 @@
 use super::Executor;
 
 mod aload;
+mod anewarray;
 mod dup;
 mod get_static;
 mod iconst;
@@ -21,6 +22,7 @@ const INVOKESTATIC: u8 = 0xb8;
 const NEW: u8 = 0xbb;
 const DUP: u8 = 0x59;
 const ALOAD_0: u8 = 0x2a;
+const ANEWARRAY: u8 = 0xbd;
 
 type OpMethod = fn(&mut Executor);
 
@@ -36,6 +38,7 @@ pub fn get_op(op_code: &u8) -> Option<OpMethod> {
         RET => Some(ret::perform as OpMethod),
         LDC => Some(ldc::perform as OpMethod),
         ICONST_0 => Some(iconst::iconst_0 as OpMethod),
+        ANEWARRAY => Some(anewarray::perform as OpMethod),
         _ => None,
     }
 }

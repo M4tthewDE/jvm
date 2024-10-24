@@ -6,6 +6,16 @@ use crate::{
 use super::{class::Class, code::Code, instance::Instance, method::Method};
 
 #[derive(Debug, Clone)]
+pub enum Reference {
+    Instance(Instance),
+    Array {
+        _values: Vec<Reference>,
+        _class: Class,
+    },
+    Null,
+}
+
+#[derive(Debug, Clone)]
 pub enum Word {
     _Byte(i8),
     _Short(i16),
@@ -16,7 +26,8 @@ pub enum Word {
     _Double(f64),
     _Boolean(bool),
     _ReturnAdress(usize),
-    Reference { _instance: Instance },
+    // TODO: we will need an enum that holds all the different reference types
+    Reference(Reference),
     Class { _class: Class },
     _Null,
 }

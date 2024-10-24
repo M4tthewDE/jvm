@@ -1,5 +1,9 @@
 use crate::{
-    executor::{instance::Instance, stack::Word, Executor},
+    executor::{
+        instance::Instance,
+        stack::{Reference, Word},
+        Executor,
+    },
     parser::constant_pool::Index,
 };
 
@@ -14,8 +18,6 @@ pub fn perform(executor: &mut Executor) {
     let identifier = executor.stack.lookup_class(&class_index).unwrap();
     let class = executor.resolve_class(identifier);
     let instance = Instance::new(class);
-    let reference = Word::Reference {
-        _instance: instance,
-    };
+    let reference = Word::Reference(Reference::Instance(instance));
     executor.stack.push_operand(reference);
 }
