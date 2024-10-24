@@ -1,8 +1,20 @@
+use std::fmt::Display;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Descriptor {
     Field(FieldType),
     Method(MethodDescriptor),
 }
+
+impl Display for Descriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Descriptor::Field(_) => todo!(),
+            Descriptor::Method(d) => write!(f, "{d}"),
+        }
+    }
+}
+
 impl Descriptor {
     pub fn method_descriptor(&self) -> Option<MethodDescriptor> {
         match self {
@@ -24,6 +36,23 @@ pub enum FieldType {
     Short,
     Boolean,
     Array(Box<Self>),
+}
+
+impl Display for FieldType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FieldType::Byte => write!(f, "B"),
+            FieldType::Char => write!(f, "C"),
+            FieldType::Double => write!(f, "D"),
+            FieldType::Float => write!(f, "F"),
+            FieldType::Int => write!(f, "I"),
+            FieldType::Long => write!(f, "J"),
+            FieldType::Class(text) => write!(f, "L{text};"),
+            FieldType::Short => write!(f, "S"),
+            FieldType::Boolean => write!(f, "Z"),
+            FieldType::Array(field_type) => write!(f, "[{field_type}"),
+        }
+    }
 }
 
 impl FieldType {
@@ -68,6 +97,14 @@ pub enum ReturnDescriptor {
     Type(FieldType),
     Void,
 }
+impl Display for ReturnDescriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ReturnDescriptor::Type(field_type) => write!(f, "{field_type}"),
+            ReturnDescriptor::Void => write!(f, "V"),
+        }
+    }
+}
 
 impl ReturnDescriptor {
     fn new(text: &str) -> Self {
@@ -83,6 +120,17 @@ impl ReturnDescriptor {
 pub struct MethodDescriptor {
     pub parameters: Vec<FieldType>,
     pub return_descriptor: ReturnDescriptor,
+}
+
+impl Display for MethodDescriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut params = String::new();
+        for param in &self.parameters {
+            params.push_str(&format!("{param}"));
+        }
+
+        write!(f, "({params}){}", self.return_descriptor)
+    }
 }
 
 impl MethodDescriptor {

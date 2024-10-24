@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{fmt::Display, io::Cursor};
 
 use crate::ClassIdentifier;
 
@@ -11,6 +11,12 @@ use super::{
 pub struct NameAndType {
     pub name: String,
     pub descriptor: Descriptor,
+}
+
+impl Display for NameAndType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.name, self.descriptor)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

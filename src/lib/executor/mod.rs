@@ -60,6 +60,7 @@ impl Executor {
     }
 
     fn execute_clinit(&mut self, class: Class, method: Method) {
+        info!("Executing clinit for {}", class.identifier);
         let code = Code::new(method.code_attribute().unwrap());
         self.stack.create(class, method, code, vec![]);
         self.execute_code();
@@ -88,7 +89,7 @@ impl Executor {
     fn execute_code(&mut self) {
         loop {
             let op_code = self.stack.get_opcode();
-            info!("executing op 0x{:x}", op_code);
+            info!("Executing op 0x{:x}", op_code);
             let op = op::get_op(&op_code)
                 .unwrap_or_else(|| panic!("Unknown instruction 0x{:x}", op_code));
             op(self);
@@ -96,6 +97,7 @@ impl Executor {
     }
 
     fn invoke_static(&mut self, class_identifier: ClassIdentifier, name_and_type: NameAndType) {
+        info!("Invoking {name_and_type} in {class_identifier}");
         let class = self.class_loader.load(class_identifier.clone());
         self.initialize_class(class.clone());
         let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
