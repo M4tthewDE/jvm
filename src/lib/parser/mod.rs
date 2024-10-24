@@ -36,3 +36,9 @@ fn parse_vec(c: &mut Cursor<&Vec<u8>>, n: usize) -> Vec<u8> {
     c.read_exact(&mut val).unwrap();
     val
 }
+
+fn parse_f32(c: &mut Cursor<&Vec<u8>>) -> f32 {
+    let mut val = [0u8; 4];
+    c.read_exact(&mut val).unwrap();
+    f32::from_be_bytes(val)
+}

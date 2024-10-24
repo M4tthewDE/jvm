@@ -1,4 +1,5 @@
 // https://docs.oracle.com/javase/specs/jvms/se17/jvms17.pdf
+// https://github.com/openjdk/jdk17
 // https://blogs.oracle.com/javamagazine/post/how-the-jvm-locates-loads-and-runs-libraries
 
 use std::path::PathBuf;

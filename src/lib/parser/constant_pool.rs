@@ -4,7 +4,7 @@ use crate::ClassIdentifier;
 
 use super::{
     descriptor::{Descriptor, FieldType, MethodDescriptor},
-    parse_i32, parse_u16, parse_u32, parse_u8, parse_vec,
+    parse_f32, parse_i32, parse_u16, parse_u32, parse_u8, parse_vec,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -19,7 +19,7 @@ impl Display for NameAndType {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ConstantPoolItem {
     Reserved,
     ClassInfo {
@@ -52,6 +52,9 @@ pub enum ConstantPoolItem {
     Long {
         val: i64,
     },
+    Float {
+        val: f32,
+    },
     InvokeDynamic {
         bootstrap_method_attr_index: u16,
         name_and_type: NameAndType,
@@ -62,7 +65,7 @@ pub enum ConstantPoolItem {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ConstantPool {
     infos: Vec<ConstantPoolInfo>,
 }
@@ -194,6 +197,7 @@ impl ConstantPool {
                 })
             }
             ConstantPoolInfo::Long(val) => Some(ConstantPoolItem::Long { val }),
+            ConstantPoolInfo::Float(val) => Some(ConstantPoolItem::Float { val }),
         }
     }
 
@@ -240,7 +244,7 @@ impl ConstantPool {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ConstantPoolInfo {
     Reserved,
     FieldRef {
@@ -281,6 +285,7 @@ pub enum ConstantPoolInfo {
         descriptor_index: Index,
     },
     Long(i64),
+    Float(f32),
 }
 
 impl ConstantPoolInfo {
@@ -290,6 +295,7 @@ impl ConstantPoolInfo {
         match tag {
             1 => ConstantPoolInfo::utf8(c),
             3 => ConstantPoolInfo::integer(c),
+            4 => ConstantPoolInfo::float(c),
             5 => ConstantPoolInfo::long(c),
             7 => ConstantPoolInfo::class_info(c),
             8 => ConstantPoolInfo::string(c),
@@ -385,5 +391,9 @@ impl ConstantPoolInfo {
         let high_bytes = parse_u32(c) as i64;
         let low_bytes = parse_u32(c) as i64;
         ConstantPoolInfo::Long((high_bytes << 8) | low_bytes)
+    }
+
+    fn float(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
+        ConstantPoolInfo::Float(parse_f32(c))
     }
 }
