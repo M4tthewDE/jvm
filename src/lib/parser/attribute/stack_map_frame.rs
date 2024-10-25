@@ -11,6 +11,10 @@ pub enum StackMapFrame {
         offset_delta: u8,
         verification_type: VerificationType,
     },
+    SameLocalsExtended {
+        offset_delta: u16,
+        verification_type: VerificationType,
+    },
     Chop {
         offset_delta: u16,
     },
@@ -34,6 +38,7 @@ impl StackMapFrame {
         match tag {
             0..=63 => Self::SameFrame { offset_delta: tag },
             64..=127 => Self::same_locals(c, tag),
+            247 => Self::same_locals_extended(c),
             248..=250 => Self::chop(c),
             251 => Self::same_extended(c),
             252..=254 => Self::append(c, tag),
@@ -45,6 +50,12 @@ impl StackMapFrame {
     fn same_locals(c: &mut Cursor<&Vec<u8>>, tag: u8) -> StackMapFrame {
         Self::SameLocals {
             offset_delta: tag - 64,
+            verification_type: VerificationType::new(c),
+        }
+    }
+    fn same_locals_extended(c: &mut Cursor<&Vec<u8>>) -> StackMapFrame {
+        Self::SameLocalsExtended {
+            offset_delta: parse_u16(c),
             verification_type: VerificationType::new(c),
         }
     }
