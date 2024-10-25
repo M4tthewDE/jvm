@@ -3,8 +3,6 @@ use std::{
     io::{Cursor, Read},
 };
 
-use tracing::instrument;
-
 use crate::{parser::parse_u16, ClassIdentifier};
 
 use super::{
@@ -25,7 +23,6 @@ pub struct ClassFile {
 }
 
 impl ClassFile {
-    #[instrument(skip_all)]
     pub fn new(data: &Vec<u8>, class_identifier: ClassIdentifier) -> ClassFile {
         let mut c = Cursor::new(data);
 

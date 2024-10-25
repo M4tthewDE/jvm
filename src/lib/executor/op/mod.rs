@@ -10,6 +10,7 @@ mod invoke_static;
 mod invoke_virtual;
 mod ldc;
 mod new;
+mod putstatic;
 mod ret;
 
 const ICONST_0: u8 = 0x3;
@@ -23,6 +24,7 @@ const NEW: u8 = 0xbb;
 const DUP: u8 = 0x59;
 const ALOAD_0: u8 = 0x2a;
 const ANEWARRAY: u8 = 0xbd;
+const PUTSTATIC: u8 = 0xb3;
 
 type OpMethod = fn(&mut Executor);
 
@@ -39,6 +41,7 @@ pub fn get_op(op_code: &u8) -> Option<OpMethod> {
         LDC => Some(ldc::perform as OpMethod),
         ICONST_0 => Some(iconst::iconst_0 as OpMethod),
         ANEWARRAY => Some(anewarray::perform as OpMethod),
+        PUTSTATIC => Some(putstatic::perform as OpMethod),
         _ => None,
     }
 }

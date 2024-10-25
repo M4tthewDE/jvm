@@ -6,7 +6,7 @@ use crate::parser::{
     method::MethodFlag,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Method {
     pub name: String,
     pub descriptor: MethodDescriptor,

@@ -2,14 +2,15 @@ use std::collections::HashMap;
 
 use class::Class;
 use code::Code;
+use field::Field;
 use loader::ClassLoader;
 use method::Method;
-use stack::Stack;
+use stack::{Stack, Word};
 use tracing::info;
 
 use crate::{
     parser::constant_pool::{Index, NameAndType},
-    ClassIdentifier, ClassName, Package,
+    ClassIdentifier,
 };
 
 mod class;
@@ -25,7 +26,7 @@ mod stack;
 pub struct Executor {
     class_loader: ClassLoader,
     initialized_classes: HashMap<ClassIdentifier, Class>,
-    class_being_initialized: ClassIdentifier,
+    class_being_initialized: Option<Class>,
     stack: Stack,
 }
 
@@ -34,7 +35,7 @@ impl Executor {
         Self {
             class_loader,
             initialized_classes: HashMap::new(),
-            class_being_initialized: ClassIdentifier::new(Package::default(), ClassName::default()),
+            class_being_initialized: None,
             stack: Stack::new(),
         }
     }
@@ -72,18 +73,24 @@ impl Executor {
             return;
         }
 
-        if self.class_being_initialized == class.identifier {
-            return;
+        if let Some(class_being_initialized) = &self.class_being_initialized {
+            if class_being_initialized.identifier == class.identifier {
+                return;
+            }
         }
 
-        self.class_being_initialized = class.identifier.clone();
+        self.class_being_initialized = Some(class.clone());
 
         if let Some(clinit) = class.clinit_method() {
             self.execute_clinit(class.clone(), clinit);
         }
 
-        self.initialized_classes
-            .insert(class.identifier.clone(), class);
+        self.initialized_classes.insert(
+            class.identifier.clone(),
+            self.class_being_initialized.clone().unwrap(),
+        );
+
+        self.class_being_initialized = None;
     }
 
     fn execute_code(&mut self) {
@@ -124,25 +131,15 @@ impl Executor {
         }
     }
 
-    fn resolve_field(&mut self, field_index: &Index) {
+    fn resolve_field(&mut self, field_index: &Index) -> Field {
         let (class_identifier, name_and_type) = self.stack.lookup_field(field_index).unwrap();
         let class = self.resolve_class(class_identifier.clone());
-        let _field = class.field(&name_and_type).unwrap_or_else(|| {
+        let field = class.field(&name_and_type).unwrap_or_else(|| {
             panic!("field {name_and_type:?} not found in class {class_identifier}")
         });
         self.initialize_class(class);
-        /*
-         *
-         * On successful resolution of the field, the class or interface that
-         * declared the resolved field is initialized if that class or interface
-         * has not already been initialized (§5.5).
-         * The value of the class or interface field is fetched and pushed onto
-         * the operand stack.
-         *
-         * TODO: What does "the value" mean?
-         *
-         */
-        todo!("")
+
+        field
     }
 
     fn resolve_class(&mut self, identifier: ClassIdentifier) -> Class {
@@ -152,6 +149,12 @@ impl Executor {
         }
 
         class
+    }
+
+    fn assign_static_field(&mut self, field: &Field, value: &Word) {
+        let mut class = self.class_being_initialized.clone().unwrap();
+        class.set_field(field, value);
+        self.class_being_initialized = Some(class);
     }
 
     fn pc(&mut self, n: usize) {

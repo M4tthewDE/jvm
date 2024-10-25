@@ -9,9 +9,9 @@ use crate::{
     ClassIdentifier, Package,
 };
 
-use super::{field::Field, method::Method};
+use super::{field::Field, method::Method, stack::Word};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Class {
     pub identifier: ClassIdentifier,
     constant_pool: ConstantPool,
@@ -101,5 +101,16 @@ impl Class {
 
     pub fn resolve_in_cp(&self, index: &Index) -> Option<ConstantPoolItem> {
         self.constant_pool.resolve(index)
+    }
+
+    pub fn set_field(&mut self, field: &Field, value: &Word) {
+        for f in &mut self.fields {
+            if f == field {
+                f.value = value.clone();
+                return;
+            }
+        }
+
+        panic!("field {field} not found in {self}");
     }
 }

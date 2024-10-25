@@ -9,7 +9,7 @@ pub enum Descriptor {
 impl Display for Descriptor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Descriptor::Field(_) => todo!(),
+            Descriptor::Field(field_type) => write!(f, "{field_type}"),
             Descriptor::Method(d) => write!(f, "{d}"),
         }
     }

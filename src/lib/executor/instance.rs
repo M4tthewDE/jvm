@@ -1,6 +1,8 @@
+use std::fmt::Display;
+
 use super::{class::Class, stack::Word};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Instance {
     _class: Class,
     _instance_variables: Vec<Word>,
@@ -17,5 +19,11 @@ impl Instance {
             _class: class,
             _instance_variables: Vec::new(),
         }
+    }
+}
+
+impl Display for Instance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Instance of {}", self._class)
     }
 }

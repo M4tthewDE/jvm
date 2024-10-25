@@ -21,8 +21,8 @@ pub fn perform(executor: &mut Executor) {
             ConstantPoolItem::ClassInfo { identifier } => {
                 let class = executor.resolve_class(identifier);
                 let reference = Word::Reference(Reference::Array {
-                    _values: vec![Reference::Null; *count as usize],
-                    _class: class,
+                    values: vec![Reference::Null; *count as usize],
+                    class,
                 });
                 executor.stack.push_operand(reference);
             }
