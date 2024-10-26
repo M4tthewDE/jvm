@@ -20,7 +20,7 @@ impl Code {
         panic!("can't construct Code out of {:?}", code_attribute);
     }
 
-    pub fn get_opcode(&self, i: usize) -> u8 {
-        self.opcodes.get(i).cloned().unwrap()
+    pub fn get_opcode(&self, i: usize) -> Option<u8> {
+        self.opcodes.get(i).cloned()
     }
 }

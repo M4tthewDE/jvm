@@ -24,8 +24,7 @@ pub fn perform(executor: &mut Executor) -> Result<()> {
         bail!("{field} cannot be set to {value}");
     }
 
-    executor.assign_static_field(&field, value);
-    Ok(())
+    executor.assign_static_field(&field, value)
 }
 
 fn is_compatible(descriptor: &Descriptor, value: &Word) -> bool {

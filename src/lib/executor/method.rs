@@ -5,7 +5,7 @@ use crate::parser::{
     descriptor::{FieldType, MethodDescriptor, ReturnDescriptor},
     method::MethodFlag,
 };
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Method {
@@ -73,13 +73,13 @@ impl Method {
         self.is_public() && self.is_static() && self.name == "main" && self.has_main_args()
     }
 
-    pub fn code_attribute(&self) -> Option<Attribute> {
+    pub fn code_attribute(&self) -> Result<Attribute> {
         for attribute in &self.attributes {
             if let Attribute::Code { .. } = attribute {
-                return Some(attribute.clone());
+                return Ok(attribute.clone());
             }
         }
 
-        None
+        bail!("no code attribute found")
     }
 }

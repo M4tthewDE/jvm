@@ -7,7 +7,7 @@ use crate::{
     },
     ClassIdentifier,
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use lazy_static::lazy_static;
 
 use super::{stack::Word, Executor};
@@ -46,11 +46,9 @@ pub fn invoke_static(
 ) -> Result<Option<Word>> {
     NATIVE_STATIC_METHODS
         .get(&(class_identifier.clone(), name.clone(), parameters.clone()))
-        .unwrap_or_else(|| {
-            panic!(
+        .context(format!(
         "native method {name} in {class_identifier} with parameters {parameters:?} not implemented"
-    )
-        })(executor, operands)
+    ))?(executor, operands)
 }
 
 fn register_natives_system(executor: &mut Executor, _operands: Vec<Word>) -> Result<Option<Word>> {

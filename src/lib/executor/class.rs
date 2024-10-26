@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::fmt::Display;
 
 use crate::{
@@ -46,24 +46,24 @@ impl Class {
         self.access_flags.contains(&AccessFlag::Public)
     }
 
-    pub fn main_method(&self) -> Option<Method> {
+    pub fn main_method(&self) -> Result<Method> {
         for method in &self.methods {
             if method.is_main() {
-                return Some(method.clone());
+                return Ok(method.clone());
             }
         }
 
-        None
+        bail!("no main method found")
     }
 
-    pub fn field(&self, name_and_type: &NameAndType) -> Option<Field> {
+    pub fn field(&self, name_and_type: &NameAndType) -> Result<Field> {
         for field in &self.fields {
             if field.name == name_and_type.name && field.descriptor == name_and_type.descriptor {
-                return Some(field.clone());
+                return Ok(field.clone());
             }
         }
 
-        None
+        bail!("field not found")
     }
 
     pub fn clinit_method(&self) -> Option<Method> {
@@ -76,8 +76,8 @@ impl Class {
         None
     }
 
-    pub fn is_native(&self, name: &str, descriptor: &MethodDescriptor) -> bool {
-        self.method(name, descriptor).unwrap().is_native()
+    pub fn is_native(&self, name: &str, descriptor: &MethodDescriptor) -> Result<bool> {
+        Ok(self.method(name, descriptor)?.is_native())
     }
 
     pub fn has_main(&self) -> bool {
@@ -90,14 +90,14 @@ impl Class {
         false
     }
 
-    pub fn method(&self, name: &str, descriptor: &MethodDescriptor) -> Option<Method> {
+    pub fn method(&self, name: &str, descriptor: &MethodDescriptor) -> Result<Method> {
         for method in &self.methods {
             if method.descriptor == *descriptor && method.name == name {
-                return Some(method.clone());
+                return Ok(method.clone());
             }
         }
 
-        None
+        bail!("method not found")
     }
 
     pub fn resolve_in_cp(&self, index: &Index) -> Option<ConstantPoolItem> {

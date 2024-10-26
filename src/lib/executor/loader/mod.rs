@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::collections::HashMap;
 
 use class_path::ClassPath;
@@ -28,10 +28,7 @@ impl ClassLoader {
 
         info!("Loading class {class_identifier}");
 
-        let data = self
-            .class_path
-            .find(&class_identifier)
-            .unwrap_or_else(|| panic!("unable to find class {class_identifier} in classpath"));
+        let data = self.class_path.find(&class_identifier)?;
         let class_file = ClassFile::new(&data, class_identifier.clone())?;
         let class = Class::new(class_file)?;
 
@@ -46,11 +43,11 @@ impl ClassLoader {
 
         info!("Loading main class {class_identifier}");
 
-        let data = self.class_path.find(&class_identifier).unwrap();
+        let data = self.class_path.find(&class_identifier)?;
         let class_file = ClassFile::new(&data, class_identifier.clone())?;
         let class = Class::new(class_file)?;
         if !class.has_main() {
-            panic!("No main method in class {class_identifier}");
+            bail!("No main method in class {class_identifier}");
         }
         self.classes.insert(class_identifier, class.clone());
         Ok(())

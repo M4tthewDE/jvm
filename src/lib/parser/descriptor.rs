@@ -19,10 +19,10 @@ impl Display for Descriptor {
 }
 
 impl Descriptor {
-    pub fn method_descriptor(&self) -> Option<MethodDescriptor> {
+    pub fn method_descriptor(&self) -> Result<MethodDescriptor> {
         match self {
-            Descriptor::Field(_) => None,
-            Descriptor::Method(md) => Some(md.clone()),
+            Descriptor::Field(_) => bail!("field descriptor"),
+            Descriptor::Method(md) => Ok(md.clone()),
         }
     }
 }

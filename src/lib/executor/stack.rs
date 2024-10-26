@@ -113,8 +113,10 @@ impl Frame {
         self.pc += n;
     }
 
-    fn get_op_code(&self) -> u8 {
-        self.code.get_opcode(self.pc)
+    fn get_op_code(&self) -> Result<u8> {
+        self.code
+            .get_opcode(self.pc)
+            .context(format!("no op code at index {}", self.pc))
     }
 }
 
@@ -149,7 +151,7 @@ impl Stack {
     }
 
     pub fn get_opcode(&self) -> Result<u8> {
-        Ok(self.current_frame()?.get_op_code())
+        self.current_frame()?.get_op_code()
     }
 
     pub fn pop_operands(&mut self, n: usize) -> Result<Vec<Word>> {

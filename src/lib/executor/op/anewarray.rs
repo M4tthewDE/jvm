@@ -5,11 +5,11 @@ use crate::{
     },
     parser::constant_pool::{ConstantPoolItem, Index},
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 
 pub fn perform(executor: &mut Executor) -> Result<()> {
     let operands = executor.stack.pop_operands(1)?;
-    match operands.first().unwrap() {
+    match operands.first().context("local variables are empty")? {
         Word::Int(count) => {
             executor.pc(1)?;
             let indexbyte1 = executor.stack.get_opcode()? as u16;

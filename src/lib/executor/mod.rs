@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 
 use anyhow::bail;
@@ -53,18 +53,20 @@ impl Executor {
 
     fn execute_main_method(&mut self, class: Class) -> Result<()> {
         self.initialize_class(class.clone())?;
-        let class = self.get_class(&class.identifier).unwrap();
-        let method = class.main_method().unwrap();
+        let class = self
+            .get_class(&class.identifier)
+            .context(format!("class not found {}", &class.identifier))?;
+        let method = class.main_method()?;
 
         // TODO: add []String args, see invokestatic for reference
-        let code = Code::new(method.code_attribute().unwrap());
+        let code = Code::new(method.code_attribute()?);
         self.stack.create(class, method, code, vec![]);
         self.execute_code()
     }
 
     fn execute_clinit(&mut self, class: Class, method: Method) -> Result<()> {
         info!("Executing clinit for {}", class.identifier);
-        let code = Code::new(method.code_attribute().unwrap());
+        let code = Code::new(method.code_attribute()?);
         self.stack.create(class, method, code, vec![]);
         self.execute_code()?;
         todo!("after execute clinit");
@@ -86,14 +88,14 @@ impl Executor {
         if let Some(clinit) = class.clinit_method() {
             self.execute_clinit(class.clone(), clinit)?;
         }
-
-        self.initialized_classes.insert(
-            class.identifier.clone(),
-            self.class_being_initialized.clone().unwrap(),
-        );
-
-        self.class_being_initialized = None;
-        Ok(())
+        if let Some(ci) = &self.class_being_initialized {
+            self.initialized_classes
+                .insert(class.identifier.clone(), ci.clone());
+            self.class_being_initialized = None;
+            Ok(())
+        } else {
+            bail!("no class is being initialized")
+        }
     }
 
     fn execute_code(&mut self) -> Result<()> {
@@ -113,12 +115,12 @@ impl Executor {
         debug!("Invoking {name_and_type} in {class_identifier}");
         let class = self.class_loader.load(class_identifier.clone())?;
         self.initialize_class(class.clone())?;
-        let method_descriptor = &name_and_type.descriptor.method_descriptor().unwrap();
+        let method_descriptor = &name_and_type.descriptor.method_descriptor()?;
 
         let operands = self
             .stack
             .pop_operands(method_descriptor.parameters.len())?;
-        if class.is_native(&name_and_type.name, method_descriptor) {
+        if class.is_native(&name_and_type.name, method_descriptor)? {
             if let Some(word) = native::invoke_static(
                 self,
                 class.identifier,
@@ -131,10 +133,8 @@ impl Executor {
 
             Ok(())
         } else {
-            let method = class
-                .method(&name_and_type.name, method_descriptor)
-                .unwrap();
-            let code = Code::new(method.code_attribute().unwrap());
+            let method = class.method(&name_and_type.name, method_descriptor)?;
+            let code = Code::new(method.code_attribute()?);
             self.stack.create(class, method, code, operands);
             self.execute_code()?;
             bail!("after invoke_static has executed its code");
@@ -144,9 +144,7 @@ impl Executor {
     fn resolve_field(&mut self, field_index: &Index) -> Result<Field> {
         let (class_identifier, name_and_type) = self.stack.lookup_field(field_index)?;
         let class = self.resolve_class(class_identifier.clone())?;
-        let field = class.field(&name_and_type).unwrap_or_else(|| {
-            panic!("field {name_and_type:?} not found in class {class_identifier}")
-        });
+        let field = class.field(&name_and_type)?;
         self.initialize_class(class)?;
         Ok(field)
     }
@@ -160,11 +158,15 @@ impl Executor {
         Ok(class)
     }
 
-    fn assign_static_field(&mut self, field: &Field, value: &Word) {
-        let mut class = self.class_being_initialized.clone().unwrap();
-        debug!("Assigning {field} in {class}");
-        class.set_field(field, value);
-        self.class_being_initialized = Some(class);
+    fn assign_static_field(&mut self, field: &Field, value: &Word) -> Result<()> {
+        if let Some(ref mut class) = self.class_being_initialized {
+            debug!("Assigning {field} in {class}");
+            class.set_field(field, value);
+            self.class_being_initialized = Some(class.clone());
+            Ok(())
+        } else {
+            bail!("no class is being initialized")
+        }
     }
 
     fn pc(&mut self, n: usize) -> Result<()> {
