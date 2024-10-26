@@ -69,7 +69,7 @@ impl Executor {
         let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
         self.execute_code()?;
-        todo!("after execute clinit");
+        bail!("after execute clinit");
     }
 
     fn initialize_class(&mut self, class: Class) -> Result<()> {

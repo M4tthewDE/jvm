@@ -1,3 +1,4 @@
+use anyhow::{bail, Result};
 use std::fmt::Display;
 
 use super::{class::Class, stack::Word};
@@ -9,16 +10,15 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn new(class: Class) -> Self {
-        assert_eq!(
-            class.fields.len(),
-            0,
-            "instance fields are not supported yet"
-        );
-        Self {
+    pub fn new(class: Class) -> Result<Self> {
+        if class.fields.len() != 0 {
+            bail!("instance fields are not supported yet");
+        }
+
+        Ok(Self {
             _class: class,
             _instance_variables: Vec::new(),
-        }
+        })
     }
 }
 

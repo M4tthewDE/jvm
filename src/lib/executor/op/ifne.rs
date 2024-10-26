@@ -9,5 +9,5 @@ pub fn perform(executor: &mut Executor) -> Result<()> {
     }
 
     dbg!(value);
-    todo!();
+    bail!("ifne");
 }

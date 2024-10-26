@@ -10,10 +10,9 @@ pub fn perform(executor: &mut Executor) -> Result<()> {
     executor.pc(1)?;
     let cp_item = executor.stack.resolve_in_cp(&index)?;
 
-    assert!(
-        !matches!(cp_item, ConstantPoolItem::Long { .. }),
-        "constant pool item cannot be of type Long"
-    );
+    if matches!(cp_item, ConstantPoolItem::Long { .. }) {
+        bail!("constant pool item cannot be of type Long");
+    }
 
     match cp_item {
         ConstantPoolItem::Reserved => {

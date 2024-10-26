@@ -70,12 +70,12 @@ impl ClassIdentifier {
         }
     }
 
-    pub fn from_utf8(text: String) -> Self {
+    pub fn from_utf8(text: String) -> Option<Self> {
         let text = text.replace("/", ".");
         let parts: Vec<&str> = text.split(".").collect();
-        let name = ClassName::new(parts.last().unwrap().to_string());
+        let name = ClassName::new(parts.last()?.to_string());
         let package = Package::new(parts[..parts.len() - 1].join("."));
-        Self { package, name }
+        Some(Self { package, name })
     }
 }
 

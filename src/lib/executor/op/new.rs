@@ -18,7 +18,7 @@ pub fn perform(executor: &mut Executor) -> Result<()> {
 
     let identifier = executor.stack.lookup_class(&class_index)?;
     let class = executor.resolve_class(identifier)?;
-    let instance = Instance::new(class);
+    let instance = Instance::new(class)?;
     let reference = Word::Reference(Reference::Instance(instance));
     executor.stack.push_operand(reference);
     Ok(())

@@ -123,7 +123,7 @@ impl ConstantPool {
                 name_and_type_index,
             } => {
                 if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
-                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?)?;
                     let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
                     Some(ConstantPoolItem::FieldRef {
@@ -139,7 +139,7 @@ impl ConstantPool {
                 name_and_type_index,
             } => {
                 if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
-                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?)?;
                     let name_and_type = self.name_and_type_method(&name_and_type_index)?;
 
                     Some(ConstantPoolItem::MethodRef {
@@ -155,7 +155,7 @@ impl ConstantPool {
                 name_and_type_index,
             } => {
                 if let ConstantPoolInfo::ClassInfo { name_index } = self.get(&class_index)? {
-                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?);
+                    let class_identifier = ClassIdentifier::from_utf8(self.utf8(&name_index)?)?;
                     let name_and_type = self.name_and_type_field(&name_and_type_index)?;
 
                     Some(ConstantPoolItem::InterfaceMethodRef {
@@ -170,7 +170,7 @@ impl ConstantPool {
                 value: self.utf8(&string_index)?,
             }),
             ConstantPoolInfo::ClassInfo { name_index } => Some(ConstantPoolItem::ClassInfo {
-                identifier: ClassIdentifier::from_utf8(self.utf8(&name_index)?),
+                identifier: ClassIdentifier::from_utf8(self.utf8(&name_index)?)?,
             }),
             ConstantPoolInfo::NameAndType {
                 name_index: _,
