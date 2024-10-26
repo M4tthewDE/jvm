@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::{
     fmt::Display,
     io::{Cursor, Read},
@@ -23,56 +24,56 @@ pub struct ClassFile {
 }
 
 impl ClassFile {
-    pub fn new(data: &Vec<u8>, class_identifier: ClassIdentifier) -> ClassFile {
+    pub fn new(data: &Vec<u8>, class_identifier: ClassIdentifier) -> Result<ClassFile> {
         let mut c = Cursor::new(data);
 
         let mut magic = [0u8; 4];
-        c.read_exact(&mut magic).unwrap();
+        c.read_exact(&mut magic)?;
         assert_eq!(magic, [0xCA, 0xFE, 0xBA, 0xBE]);
 
         let _minor_version = parse_u16(&mut c);
         let _major_version = parse_u16(&mut c);
 
-        let constant_pool_count = parse_u16(&mut c) as usize;
+        let constant_pool_count = parse_u16(&mut c)? as usize;
         assert!(constant_pool_count > 0);
 
-        let constant_pool = ConstantPool::new(&mut c, constant_pool_count);
-        let access_flags = AccessFlag::flags(parse_u16(&mut c));
-        let _this_class = parse_u16(&mut c);
-        let _super_class = parse_u16(&mut c);
-        let interfaces_count = parse_u16(&mut c);
+        let constant_pool = ConstantPool::new(&mut c, constant_pool_count)?;
+        let access_flags = AccessFlag::flags(parse_u16(&mut c)?);
+        let _this_class = parse_u16(&mut c)?;
+        let _super_class = parse_u16(&mut c)?;
+        let interfaces_count = parse_u16(&mut c)?;
 
         let mut interfaces = Vec::new();
         for _ in 0..interfaces_count {
-            let index = parse_u16(&mut c);
+            let index = parse_u16(&mut c)?;
             interfaces.push(Index::new(index));
         }
 
-        let fields_count = parse_u16(&mut c);
+        let fields_count = parse_u16(&mut c)?;
         let mut fields = Vec::new();
         for _ in 0..fields_count {
-            let field = Field::new(&mut c, &constant_pool);
+            let field = Field::new(&mut c, &constant_pool)?;
             fields.push(field);
         }
 
-        let methods_count = parse_u16(&mut c);
+        let methods_count = parse_u16(&mut c)?;
 
         let mut methods = Vec::new();
         for _ in 0..methods_count {
-            let method = Method::new(&mut c, &constant_pool);
+            let method = Method::new(&mut c, &constant_pool)?;
             methods.push(method);
         }
 
         let _attributes = Attribute::attributes(&mut c, &constant_pool);
 
-        ClassFile {
+        Ok(ClassFile {
             class_identifier,
             constant_pool,
             _interfaces: interfaces,
             methods,
             fields,
             access_flags,
-        }
+        })
     }
 }
 

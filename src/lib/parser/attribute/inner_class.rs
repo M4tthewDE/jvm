@@ -1,4 +1,5 @@
 use crate::parser::{constant_pool::Index, parse_u16};
+use anyhow::Result;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InnerClass {
@@ -9,13 +10,13 @@ pub struct InnerClass {
 }
 
 impl InnerClass {
-    pub fn new(c: &mut std::io::Cursor<&Vec<u8>>) -> Self {
-        Self {
-            inner_class_info_index: Index::new(parse_u16(c)),
-            outer_class_info_index: Index::new(parse_u16(c)),
-            inner_name_index: Index::new(parse_u16(c)),
-            inner_class_access_flags: AccessFlag::flags(parse_u16(c)),
-        }
+    pub fn new(c: &mut std::io::Cursor<&Vec<u8>>) -> Result<Self> {
+        Ok(Self {
+            inner_class_info_index: Index::new(parse_u16(c)?),
+            outer_class_info_index: Index::new(parse_u16(c)?),
+            inner_name_index: Index::new(parse_u16(c)?),
+            inner_class_access_flags: AccessFlag::flags(parse_u16(c)?),
+        })
     }
 }
 

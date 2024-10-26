@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::io::Cursor;
 
 use super::{
@@ -15,13 +16,13 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Self {
-        Self {
-            _access_flags: FieldFlag::flags(parse_u16(c)),
-            name_index: Index::new(parse_u16(c)),
-            descriptor_index: Index::new(parse_u16(c)),
-            _attributes: Attribute::attributes(c, constant_pool),
-        }
+    pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Result<Self> {
+        Ok(Self {
+            _access_flags: FieldFlag::flags(parse_u16(c)?),
+            name_index: Index::new(parse_u16(c)?),
+            descriptor_index: Index::new(parse_u16(c)?),
+            _attributes: Attribute::attributes(c, constant_pool)?,
+        })
     }
 }
 

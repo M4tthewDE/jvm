@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::io::Cursor;
 
 use crate::parser::{constant_pool::Index, parse_u16};
@@ -12,14 +13,14 @@ pub struct LocalVariable {
 }
 
 impl LocalVariable {
-    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        Self {
-            start_pc: parse_u16(c),
-            length: parse_u16(c),
-            name_index: Index::new(parse_u16(c)),
-            descriptor_index: Index::new(parse_u16(c)),
-            index: parse_u16(c) as usize,
-        }
+    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Result<Self> {
+        Ok(Self {
+            start_pc: parse_u16(c)?,
+            length: parse_u16(c)?,
+            name_index: Index::new(parse_u16(c)?),
+            descriptor_index: Index::new(parse_u16(c)?),
+            index: parse_u16(c)? as usize,
+        })
     }
 }
 
@@ -33,13 +34,13 @@ pub struct LocalVariableType {
 }
 
 impl LocalVariableType {
-    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        Self {
-            start_pc: parse_u16(c),
-            length: parse_u16(c),
-            name_index: Index::new(parse_u16(c)),
-            signature_index: Index::new(parse_u16(c)),
-            index: parse_u16(c) as usize,
-        }
+    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Result<Self> {
+        Ok(Self {
+            start_pc: parse_u16(c)?,
+            length: parse_u16(c)?,
+            name_index: Index::new(parse_u16(c)?),
+            signature_index: Index::new(parse_u16(c)?),
+            index: parse_u16(c)? as usize,
+        })
     }
 }

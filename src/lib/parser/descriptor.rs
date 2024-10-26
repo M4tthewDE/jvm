@@ -1,4 +1,7 @@
+use anyhow::{bail, Result};
 use std::fmt::Display;
+
+use anyhow::Context;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Descriptor {
@@ -56,24 +59,30 @@ impl Display for FieldType {
 }
 
 impl FieldType {
-    pub fn new(text: &str) -> Self {
-        match text.chars().next().unwrap() {
-            'B' => Self::Byte,
-            'C' => Self::Char,
-            'D' => Self::Double,
-            'F' => Self::Float,
-            'I' => Self::Int,
-            'J' => Self::Long,
-            'L' => Self::Class(Self::class_text(text)),
-            'S' => Self::Short,
-            'Z' => Self::Boolean,
-            '[' => Self::Array(Box::new(Self::new(&text[1..]))),
-            c => panic!("INVALID: {c}"),
-        }
+    pub fn new(text: &str) -> Result<Self> {
+        Ok(
+            match text
+                .chars()
+                .next()
+                .context(format!("no char found in {text}"))?
+            {
+                'B' => Self::Byte,
+                'C' => Self::Char,
+                'D' => Self::Double,
+                'F' => Self::Float,
+                'I' => Self::Int,
+                'J' => Self::Long,
+                'L' => Self::Class(Self::class_text(text)?),
+                'S' => Self::Short,
+                'Z' => Self::Boolean,
+                '[' => Self::Array(Box::new(Self::new(&text[1..])?)),
+                c => bail!("INVALID: {c}"),
+            },
+        )
     }
 
-    fn class_text(text: &str) -> String {
-        text[1..text.find(';').unwrap()].to_string()
+    fn class_text(text: &str) -> Result<String> {
+        Ok(text[1..text.find(';').context(format!("no : in {text}"))?].to_string())
     }
 
     fn size(&self) -> usize {
@@ -107,12 +116,12 @@ impl Display for ReturnDescriptor {
 }
 
 impl ReturnDescriptor {
-    fn new(text: &str) -> Self {
-        if text == "V" {
+    fn new(text: &str) -> Result<Self> {
+        Ok(if text == "V" {
             Self::Void
         } else {
-            Self::Type(FieldType::new(text))
-        }
+            Self::Type(FieldType::new(text)?)
+        })
     }
 }
 
@@ -134,32 +143,32 @@ impl Display for MethodDescriptor {
 }
 
 impl MethodDescriptor {
-    pub fn new(text: &str) -> Self {
-        Self {
-            parameters: Self::parameters(Self::param_text(text)),
-            return_descriptor: ReturnDescriptor::new(Self::return_descriptor_text(text)),
-        }
+    pub fn new(text: &str) -> Result<Self> {
+        Ok(Self {
+            parameters: Self::parameters(Self::param_text(text)?)?,
+            return_descriptor: ReturnDescriptor::new(Self::return_descriptor_text(text)?)?,
+        })
     }
 
-    fn param_text(text: &str) -> &str {
-        &text[1..text.find(')').unwrap()]
+    fn param_text(text: &str) -> Result<&str> {
+        Ok(&text[1..text.find(')').context(format!("no ) in {text}"))?])
     }
 
-    fn return_descriptor_text(text: &str) -> &str {
-        &text[text.find(')').unwrap() + 1..]
+    fn return_descriptor_text(text: &str) -> Result<&str> {
+        Ok(&text[text.find(')').context(format!("no ) in {text}"))? + 1..])
     }
 
-    fn parameters(text: &str) -> Vec<FieldType> {
+    fn parameters(text: &str) -> Result<Vec<FieldType>> {
         let mut parameters = Vec::new();
 
         let mut i = 0;
         while i != text.len() {
-            let parameter = FieldType::new(&text[i..]);
+            let parameter = FieldType::new(&text[i..])?;
             i += parameter.size();
             parameters.push(parameter);
         }
 
-        parameters
+        Ok(parameters)
     }
 }
 
@@ -171,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_params() {
-        let descriptor = MethodDescriptor::new("([Ljava/lang/String;)V");
+        let descriptor = MethodDescriptor::new("([Ljava/lang/String;)V").unwrap();
         assert_eq!(
             descriptor,
             MethodDescriptor {
@@ -185,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_method_descriptor_multiple_parameters() {
-        let descriptor = MethodDescriptor::new("(IZ)Ljava/lang/String;");
+        let descriptor = MethodDescriptor::new("(IZ)Ljava/lang/String;").unwrap();
         assert_eq!(
             descriptor,
             MethodDescriptor {

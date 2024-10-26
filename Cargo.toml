@@ -8,6 +8,7 @@ name = "jvm"
 path = "src/lib/mod.rs"
 
 [dependencies]
+anyhow = "1.0.91"
 clap = { version = "4.5.19", features = ["derive"] }
 lazy_static = "1.5.0"
 tracing = "0.1.40"

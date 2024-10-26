@@ -19,7 +19,7 @@ impl Field {
     pub fn fields(parser_fields: Vec<parser::field::Field>, cp: &ConstantPool) -> Vec<Field> {
         let mut fields = Vec::new();
         for field in parser_fields {
-            let field_type = FieldType::new(&cp.utf8(&field.descriptor_index).unwrap());
+            let field_type = FieldType::new(&cp.utf8(&field.descriptor_index).unwrap()).unwrap();
             fields.push(Field {
                 name: cp.utf8(&field.name_index).unwrap(),
                 descriptor: Descriptor::Field(field_type.clone()),

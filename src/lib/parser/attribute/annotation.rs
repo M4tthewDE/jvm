@@ -1,3 +1,4 @@
+use anyhow::{bail, Result};
 use std::io::Cursor;
 
 use crate::parser::{constant_pool::Index, parse_u16, parse_u8};
@@ -9,19 +10,19 @@ pub struct Annotation {
 }
 
 impl Annotation {
-    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        let type_index = Index::new(parse_u16(c));
-        let num_element_value_pairs = parse_u16(c);
+    pub fn new(c: &mut Cursor<&Vec<u8>>) -> Result<Self> {
+        let type_index = Index::new(parse_u16(c)?);
+        let num_element_value_pairs = parse_u16(c)?;
 
         let mut element_value_pairs = Vec::new();
         for _ in 0..num_element_value_pairs {
-            element_value_pairs.push((parse_u16(c), ElementValue::new(c)));
+            element_value_pairs.push((parse_u16(c)?, ElementValue::new(c)?));
         }
 
-        Self {
+        Ok(Self {
             type_index,
             element_value_pairs,
-        }
+        })
     }
 }
 
@@ -32,17 +33,17 @@ enum ElementValue {
 }
 
 impl ElementValue {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> Self {
-        let tag = parse_u8(c) as char;
+    fn new(c: &mut Cursor<&Vec<u8>>) -> Result<Self> {
+        let tag = parse_u8(c)? as char;
 
-        match tag {
+        Ok(match tag {
             'Z' => ElementValue::Boolean {
-                const_value_index: Index::new(parse_u16(c)),
+                const_value_index: Index::new(parse_u16(c)?),
             },
             's' => ElementValue::String {
-                const_value_index: Index::new(parse_u16(c)),
+                const_value_index: Index::new(parse_u16(c)?),
             },
-            _ => panic!("Unknown element value tag {tag}"),
-        }
+            _ => bail!("Unknown element value tag {tag}"),
+        })
     }
 }

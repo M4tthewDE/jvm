@@ -31,7 +31,7 @@ impl ClassLoader {
             .class_path
             .find(&class_identifier)
             .unwrap_or_else(|| panic!("unable to find class {class_identifier} in classpath"));
-        let class_file = ClassFile::new(&data, class_identifier.clone());
+        let class_file = ClassFile::new(&data, class_identifier.clone()).unwrap();
         let class = Class::new(class_file);
 
         self.classes.insert(class_identifier, class.clone());
@@ -46,7 +46,7 @@ impl ClassLoader {
         info!("Loading main class {class_identifier}");
 
         let data = self.class_path.find(&class_identifier).unwrap();
-        let class_file = ClassFile::new(&data, class_identifier.clone());
+        let class_file = ClassFile::new(&data, class_identifier.clone()).unwrap();
         let class = Class::new(class_file);
         if !class.has_main() {
             panic!("No main method in class {class_identifier}");

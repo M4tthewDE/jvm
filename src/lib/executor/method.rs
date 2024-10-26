@@ -21,7 +21,8 @@ impl Method {
         for method in &parser_methods {
             methods.push(Method {
                 name: cp.utf8(&method.name_index).unwrap(),
-                descriptor: MethodDescriptor::new(&cp.utf8(&method.descriptor_index).unwrap()),
+                descriptor: MethodDescriptor::new(&cp.utf8(&method.descriptor_index).unwrap())
+                    .unwrap(),
                 access_flags: method.access_flags.clone(),
                 attributes: method.attributes.clone(),
             })

@@ -1,3 +1,4 @@
+use anyhow::{bail, Result};
 use std::{fmt::Display, io::Cursor};
 
 use crate::ClassIdentifier;
@@ -84,12 +85,12 @@ impl Index {
 }
 
 impl ConstantPool {
-    pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> ConstantPool {
+    pub fn new(c: &mut Cursor<&Vec<u8>>, count: usize) -> Result<ConstantPool> {
         let mut infos = vec![ConstantPoolInfo::Reserved; count];
 
         let mut i = 0;
         loop {
-            let info = ConstantPoolInfo::new(c);
+            let info = ConstantPoolInfo::new(c)?;
             if matches!(info, ConstantPoolInfo::Long(..)) {
                 i += 2;
             } else {
@@ -103,7 +104,7 @@ impl ConstantPool {
             }
         }
 
-        ConstantPool { infos }
+        Ok(ConstantPool { infos })
     }
 
     fn get(&self, index: &Index) -> Option<ConstantPoolInfo> {
@@ -213,13 +214,13 @@ impl ConstantPool {
         if let ConstantPoolInfo::NameAndType {
             name_index,
             descriptor_index,
-        } = self.get(index).unwrap()
+        } = self.get(index)?
         {
             Some(NameAndType {
-                name: self.utf8(&name_index).unwrap(),
-                descriptor: Descriptor::Method(MethodDescriptor::new(
-                    &self.utf8(&descriptor_index).unwrap(),
-                )),
+                name: self.utf8(&name_index)?,
+                descriptor: Descriptor::Method(
+                    MethodDescriptor::new(&self.utf8(&descriptor_index)?).ok()?,
+                ),
             })
         } else {
             None
@@ -230,13 +231,11 @@ impl ConstantPool {
         if let ConstantPoolInfo::NameAndType {
             name_index,
             descriptor_index,
-        } = self.get(index).unwrap()
+        } = self.get(index)?
         {
             Some(NameAndType {
-                name: self.utf8(&name_index).unwrap(),
-                descriptor: Descriptor::Field(FieldType::new(
-                    &self.utf8(&descriptor_index).unwrap(),
-                )),
+                name: self.utf8(&name_index)?,
+                descriptor: Descriptor::Field(FieldType::new(&self.utf8(&descriptor_index)?).ok()?),
             })
         } else {
             None
@@ -289,8 +288,8 @@ pub enum ConstantPoolInfo {
 }
 
 impl ConstantPoolInfo {
-    fn new(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let tag = parse_u8(c);
+    fn new(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        let tag = parse_u8(c)?;
 
         match tag {
             1 => ConstantPoolInfo::utf8(c),
@@ -306,94 +305,94 @@ impl ConstantPoolInfo {
             15 => ConstantPoolInfo::method_handle(c),
             16 => ConstantPoolInfo::method_type(c),
             18 => ConstantPoolInfo::invoke_dynamic(c),
-            t => panic!("invalid constant pool tag {t}"),
+            t => bail!("invalid constant pool tag {t}"),
         }
     }
 
-    fn class_info(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::ClassInfo {
-            name_index: Index::new(parse_u16(c)),
-        }
+    fn class_info(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::ClassInfo {
+            name_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::MethodRef {
-            class_index: Index::new(parse_u16(c)),
-            name_and_type_index: Index::new(parse_u16(c)),
-        }
+    fn method_ref(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::MethodRef {
+            class_index: Index::new(parse_u16(c)?),
+            name_and_type_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn interface_method_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::InterfaceMethodRef {
-            class_index: Index::new(parse_u16(c)),
-            name_and_type_index: Index::new(parse_u16(c)),
-        }
+    fn interface_method_ref(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::InterfaceMethodRef {
+            class_index: Index::new(parse_u16(c)?),
+            name_and_type_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn field_ref(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::FieldRef {
-            class_index: Index::new(parse_u16(c)),
-            name_and_type_index: Index::new(parse_u16(c)),
-        }
+    fn field_ref(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::FieldRef {
+            class_index: Index::new(parse_u16(c)?),
+            name_and_type_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn string(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::String {
-            string_index: Index::new(parse_u16(c)),
-        }
+    fn string(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::String {
+            string_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::NameAndType {
-            name_index: Index::new(parse_u16(c)),
-            descriptor_index: Index::new(parse_u16(c)),
-        }
+    fn name_and_type(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::NameAndType {
+            name_index: Index::new(parse_u16(c)?),
+            descriptor_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn utf8(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let length = parse_u16(c) as usize;
-        let text = String::from_utf8(parse_vec(c, length)).unwrap();
+    fn utf8(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        let length = parse_u16(c)? as usize;
+        let text = String::from_utf8(parse_vec(c, length)?)?;
 
-        ConstantPoolInfo::Utf { text }
+        Ok(ConstantPoolInfo::Utf { text })
     }
 
-    fn invoke_dynamic(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::InvokeDynamic {
-            bootstrap_method_attr_index: parse_u16(c),
-            name_and_type_index: Index::new(parse_u16(c)),
-        }
+    fn invoke_dynamic(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::InvokeDynamic {
+            bootstrap_method_attr_index: parse_u16(c)?,
+            name_and_type_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn integer(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::Integer(parse_i32(c))
+    fn integer(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::Integer(parse_i32(c)?))
     }
 
-    fn method_handle(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let reference_kind = parse_u8(c);
+    fn method_handle(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        let reference_kind = parse_u8(c)?;
         assert!(
             reference_kind > 0 && reference_kind < 10,
             "invalid value for reference_kind {reference_kind}"
         );
 
-        ConstantPoolInfo::MethodHandle {
+        Ok(ConstantPoolInfo::MethodHandle {
             reference_kind,
-            reference_index: Index::new(parse_u16(c)),
-        }
+            reference_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn method_type(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::MethodType {
-            descriptor_index: Index::new(parse_u16(c)),
-        }
+    fn method_type(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::MethodType {
+            descriptor_index: Index::new(parse_u16(c)?),
+        })
     }
 
-    fn long(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        let high_bytes = parse_u32(c) as i64;
-        let low_bytes = parse_u32(c) as i64;
-        ConstantPoolInfo::Long((high_bytes << 8) | low_bytes)
+    fn long(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        let high_bytes = parse_u32(c)? as i64;
+        let low_bytes = parse_u32(c)? as i64;
+        Ok(ConstantPoolInfo::Long((high_bytes << 8) | low_bytes))
     }
 
-    fn float(c: &mut Cursor<&Vec<u8>>) -> ConstantPoolInfo {
-        ConstantPoolInfo::Float(parse_f32(c))
+    fn float(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
+        Ok(ConstantPoolInfo::Float(parse_f32(c)?))
     }
 }
