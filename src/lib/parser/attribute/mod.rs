@@ -146,7 +146,9 @@ impl Attribute {
         let max_locals = parse_u16(c)?;
 
         let code_length = parse_u32(c)? as usize;
-        assert!(code_length > 0);
+        if code_length == 0 {
+            bail!("code is empty");
+        }
         let code = parse_vec(c, code_length)?;
 
         let exception_table_length = parse_u16(c)?;

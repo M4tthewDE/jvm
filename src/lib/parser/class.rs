@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::{
     fmt::Display,
     io::{Cursor, Read},
@@ -29,13 +29,17 @@ impl ClassFile {
 
         let mut magic = [0u8; 4];
         c.read_exact(&mut magic)?;
-        assert_eq!(magic, [0xCA, 0xFE, 0xBA, 0xBE]);
+        if magic != [0xCA, 0xFE, 0xBA, 0xBE] {
+            bail!("invalid magic bytes {magic:?}");
+        }
 
         let _minor_version = parse_u16(&mut c);
         let _major_version = parse_u16(&mut c);
 
         let constant_pool_count = parse_u16(&mut c)? as usize;
-        assert!(constant_pool_count > 0);
+        if constant_pool_count == 0 {
+            bail!("constant pool count is empty");
+        }
 
         let constant_pool = ConstantPool::new(&mut c, constant_pool_count)?;
         let access_flags = AccessFlag::flags(parse_u16(&mut c)?);

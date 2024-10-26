@@ -369,10 +369,10 @@ impl ConstantPoolInfo {
 
     fn method_handle(c: &mut Cursor<&Vec<u8>>) -> Result<ConstantPoolInfo> {
         let reference_kind = parse_u8(c)?;
-        assert!(
-            reference_kind > 0 && reference_kind < 10,
-            "invalid value for reference_kind {reference_kind}"
-        );
+
+        if !(reference_kind > 0 && reference_kind < 10) {
+            bail!("invalid value for reference_kind {reference_kind}")
+        }
 
         Ok(ConstantPoolInfo::MethodHandle {
             reference_kind,
