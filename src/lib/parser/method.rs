@@ -1,7 +1,5 @@
 use std::io::Cursor;
 
-use tracing::instrument;
-
 use super::{
     attribute::Attribute,
     constant_pool::{ConstantPool, Index},
@@ -17,7 +15,6 @@ pub struct Method {
 }
 
 impl Method {
-    #[instrument(skip_all, name = "method")]
     pub fn new(c: &mut Cursor<&Vec<u8>>, constant_pool: &ConstantPool) -> Method {
         Method {
             access_flags: MethodFlag::flags(parse_u16(c)),

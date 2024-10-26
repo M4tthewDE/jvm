@@ -1,4 +1,4 @@
-use tracing::warn;
+use tracing::debug;
 
 use crate::{
     executor::{stack::Word, Executor},
@@ -38,7 +38,7 @@ fn is_compatible(descriptor: &Descriptor, value: &Word) -> bool {
             FieldType::Short => matches!(value, Word::_Short(..)),
             FieldType::Boolean => matches!(value, Word::_Boolean(..)),
             _ => {
-                warn!("Assignment compatibility is not checked for reference types!");
+                debug!("Assignment compatibility is not checked for reference types!");
                 true
             }
         }
