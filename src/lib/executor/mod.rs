@@ -68,8 +68,7 @@ impl Executor {
     fn execute_clinit(&mut self, class: Class, method: Method) -> Result<()> {
         let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
-        self.execute_code()?;
-        bail!("after execute clinit");
+        self.execute_code()
     }
 
     fn initialize_class(&mut self, class: Class) -> Result<()> {
@@ -105,6 +104,10 @@ impl Executor {
             debug!("{}", self.stack);
             info!("Executing {}", op::name(op_code)?);
             op(self)?;
+
+            if op::is_return(op_code) {
+                return Ok(());
+            }
         }
     }
 

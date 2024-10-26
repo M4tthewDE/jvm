@@ -17,7 +17,7 @@ mod ret;
 
 const ICONST_0: u8 = 0x3;
 const LDC: u8 = 0x12;
-const RET: u8 = 0xb1;
+const RETURN: u8 = 0xb1;
 const GETSTATIC: u8 = 0xb2;
 const INVOKEVIRTUAL: u8 = 0xb6;
 const INVOKESPECIAL: u8 = 0xb7;
@@ -40,7 +40,7 @@ pub fn get_op(op_code: u8) -> Result<OpMethod> {
         NEW => Ok(new::perform as OpMethod),
         DUP => Ok(dup::perform as OpMethod),
         ALOAD_0 => Ok(aload::aload_0 as OpMethod),
-        RET => Ok(ret::perform as OpMethod),
+        RETURN => Ok(ret::perform as OpMethod),
         LDC => Ok(ldc::perform as OpMethod),
         ICONST_0 => Ok(iconst::iconst_0 as OpMethod),
         ANEWARRAY => Ok(anewarray::perform as OpMethod),
@@ -59,12 +59,19 @@ pub fn name(op_code: u8) -> Result<String> {
         NEW => Ok("new".to_string()),
         DUP => Ok("dup".to_string()),
         ALOAD_0 => Ok("aload_0".to_string()),
-        RET => Ok("ret".to_string()),
+        RETURN => Ok("ret".to_string()),
         LDC => Ok("ldc".to_string()),
         ICONST_0 => Ok("iconst_0".to_string()),
         ANEWARRAY => Ok("anewarray".to_string()),
         PUTSTATIC => Ok("putstatic".to_string()),
         IFNE => Ok("ifne".to_string()),
         _ => bail!("unknown op 0x{op_code:X}"),
+    }
+}
+
+pub fn is_return(op_code: u8) -> bool {
+    match op_code {
+        RETURN => true,
+        _ => false,
     }
 }

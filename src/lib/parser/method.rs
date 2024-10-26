@@ -34,8 +34,12 @@ pub enum MethodFlag {
     Static,
     Final,
     Synchronized,
+    Bridge,
+    Varargs,
     Native,
     Abstract,
+    Strict,
+    Synthetic,
 }
 
 impl MethodFlag {
@@ -66,12 +70,28 @@ impl MethodFlag {
             flags.push(MethodFlag::Synchronized);
         }
 
+        if (val & 0x0040) != 0 {
+            flags.push(MethodFlag::Bridge);
+        }
+
+        if (val & 0x0080) != 0 {
+            flags.push(MethodFlag::Varargs);
+        }
+
         if (val & 0x0100) != 0 {
             flags.push(MethodFlag::Native);
         }
 
         if (val & 0x0400) != 0 {
             flags.push(MethodFlag::Abstract);
+        }
+
+        if (val & 0x0800) != 0 {
+            flags.push(MethodFlag::Strict);
+        }
+
+        if (val & 0x1000) != 0 {
+            flags.push(MethodFlag::Synthetic);
         }
 
         flags

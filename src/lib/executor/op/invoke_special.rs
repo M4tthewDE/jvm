@@ -16,11 +16,15 @@ pub fn perform(executor: &mut Executor) -> Result<()> {
     let method_descriptor = &name_and_type.descriptor.method_descriptor()?;
     let class = executor.resolve_class(class_identifier)?;
     let method = class.method(&name_and_type.name, method_descriptor)?;
+
+    if method.is_native() {
+        bail!("invoke_special for native methods not implemented");
+    }
+
     let code = Code::new(method.code_attribute()?)?;
     let operands = executor
         .stack
         .pop_operands(method_descriptor.parameters.len() + 1)?;
     executor.stack.create(class, method, code, operands);
-    executor.execute_code()?;
-    bail!("invoke_special");
+    executor.execute_code()
 }

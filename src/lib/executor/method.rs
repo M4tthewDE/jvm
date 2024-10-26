@@ -40,13 +40,7 @@ impl Method {
     }
 
     pub fn is_native(&self) -> bool {
-        for flag in &self.access_flags {
-            if matches!(flag, MethodFlag::Native) {
-                return true;
-            }
-        }
-
-        false
+        self.access_flags.contains(&MethodFlag::Native)
     }
 
     pub fn is_clinit(&self) -> bool {
@@ -60,6 +54,11 @@ impl Method {
     fn is_static(&self) -> bool {
         self.access_flags.contains(&MethodFlag::Static)
     }
+
+    pub fn is_varargs(&self) -> bool {
+        self.access_flags.contains(&MethodFlag::Varargs)
+    }
+
     fn has_main_args(&self) -> bool {
         let main_parameters = vec![FieldType::Array(Box::new(FieldType::Class(
             "java/lang/String".to_string(),

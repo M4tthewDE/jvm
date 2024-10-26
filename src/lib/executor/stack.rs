@@ -188,6 +188,7 @@ impl Stack {
     }
 
     pub fn pop(&mut self) -> Option<Frame> {
+        self.operand_stack = Vec::new();
         self.frames.pop()
     }
 
@@ -233,6 +234,14 @@ impl Stack {
 impl Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f)?;
+        writeln!(f, "Operands")?;
+        for operand in self.operand_stack.iter().rev() {
+            writeln!(f, "{operand}")?;
+        }
+
+        writeln!(f)?;
+
+        writeln!(f, "Stack")?;
         for frame in self.frames.iter().rev() {
             writeln!(f, "{frame}")?;
         }
