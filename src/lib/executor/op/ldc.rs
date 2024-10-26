@@ -2,12 +2,13 @@ use crate::{
     executor::{stack::Word, Executor},
     parser::constant_pool::{ConstantPoolItem, Index},
 };
+use anyhow::{bail, Result};
 
-pub fn perform(executor: &mut Executor) {
-    executor.pc(1);
-    let index = Index::new(executor.stack.get_opcode());
-    executor.pc(1);
-    let cp_item = executor.stack.resolve_in_cp(&index);
+pub fn perform(executor: &mut Executor) -> Result<()> {
+    executor.pc(1)?;
+    let index = Index::new(executor.stack.get_opcode()?);
+    executor.pc(1)?;
+    let cp_item = executor.stack.resolve_in_cp(&index)?;
 
     assert!(
         !matches!(cp_item, ConstantPoolItem::Long { .. }),
@@ -16,13 +17,15 @@ pub fn perform(executor: &mut Executor) {
 
     match cp_item {
         ConstantPoolItem::Reserved => {
-            panic!("constant pool item reserved should never appear here")
+            bail!("constant pool item reserved should never appear here")
         }
 
         ConstantPoolItem::ClassInfo { identifier } => {
-            let class = executor.resolve_class(identifier);
+            let class = executor.resolve_class(identifier)?;
             executor.stack.push_operand(Word::Class { _class: class })
         }
-        _ => panic!("constant pool item {cp_item:?} not yet supported by ldc"),
+        _ => bail!("constant pool item {cp_item:?} not yet supported by ldc"),
     }
+
+    Ok(())
 }

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::fmt::Display;
 
 use crate::{
@@ -27,14 +28,14 @@ impl Display for Class {
 }
 
 impl Class {
-    pub fn new(class_file: ClassFile) -> Self {
-        Self {
+    pub fn new(class_file: ClassFile) -> Result<Self> {
+        Ok(Self {
             identifier: class_file.class_identifier,
             constant_pool: class_file.constant_pool.clone(),
-            fields: Field::fields(class_file.fields, &class_file.constant_pool),
-            methods: Method::methods(class_file.methods, &class_file.constant_pool),
+            fields: Field::fields(class_file.fields, &class_file.constant_pool)?,
+            methods: Method::methods(class_file.methods, &class_file.constant_pool)?,
             access_flags: class_file.access_flags.clone(),
-        }
+        })
     }
 
     pub fn package(&self) -> Package {

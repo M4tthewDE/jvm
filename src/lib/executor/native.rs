@@ -7,11 +7,12 @@ use crate::{
     },
     ClassIdentifier,
 };
+use anyhow::Result;
 use lazy_static::lazy_static;
 
 use super::{stack::Word, Executor};
 
-type NativeMethod = fn(&mut Executor, Vec<Word>) -> Option<Word>;
+type NativeMethod = fn(&mut Executor, Vec<Word>) -> Result<Option<Word>>;
 
 lazy_static! {
     static ref NATIVE_STATIC_METHODS: HashMap<(ClassIdentifier, String, Vec<FieldType>), NativeMethod> = {
@@ -42,7 +43,7 @@ pub fn invoke_static(
     name: String,
     parameters: Vec<FieldType>,
     operands: Vec<Word>,
-) -> Option<Word> {
+) -> Result<Option<Word>> {
     NATIVE_STATIC_METHODS
         .get(&(class_identifier.clone(), name.clone(), parameters.clone()))
         .unwrap_or_else(|| {
@@ -52,7 +53,7 @@ pub fn invoke_static(
         })(executor, operands)
 }
 
-fn register_natives_system(executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
+fn register_natives_system(executor: &mut Executor, _operands: Vec<Word>) -> Result<Option<Word>> {
     let class_identifier = ClassIdentifier::from("java.lang".to_string(), "System".to_string());
     let name_and_type = NameAndType {
         name: "initPhase1".to_string(),
@@ -61,10 +62,10 @@ fn register_natives_system(executor: &mut Executor, _operands: Vec<Word>) -> Opt
             return_descriptor: ReturnDescriptor::Void,
         }),
     };
-    executor.invoke_static(class_identifier, name_and_type);
-    None
+    executor.invoke_static(class_identifier, name_and_type)?;
+    Ok(None)
 }
 
-fn register_natives_class(_executor: &mut Executor, _operands: Vec<Word>) -> Option<Word> {
-    None
+fn register_natives_class(_executor: &mut Executor, _operands: Vec<Word>) -> Result<Option<Word>> {
+    Ok(None)
 }

@@ -5,6 +5,7 @@ use crate::parser::{
     descriptor::{FieldType, MethodDescriptor, ReturnDescriptor},
     method::MethodFlag,
 };
+use anyhow::{Context, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Method {
@@ -15,20 +16,27 @@ pub struct Method {
 }
 
 impl Method {
-    pub fn methods(parser_methods: Vec<parser::method::Method>, cp: &ConstantPool) -> Vec<Method> {
+    pub fn methods(
+        parser_methods: Vec<parser::method::Method>,
+        cp: &ConstantPool,
+    ) -> Result<Vec<Method>> {
         let mut methods = Vec::new();
 
         for method in &parser_methods {
             methods.push(Method {
-                name: cp.utf8(&method.name_index).unwrap(),
-                descriptor: MethodDescriptor::new(&cp.utf8(&method.descriptor_index).unwrap())
-                    .unwrap(),
+                name: cp
+                    .utf8(&method.name_index)
+                    .context(format!("no utf8 entry at {:?}", method.name_index))?,
+                descriptor: MethodDescriptor::new(
+                    &cp.utf8(&method.descriptor_index)
+                        .context(format!("no utf8 entry at {:?}", method.name_index))?,
+                )?,
                 access_flags: method.access_flags.clone(),
                 attributes: method.attributes.clone(),
             })
         }
 
-        methods
+        Ok(methods)
     }
 
     pub fn is_native(&self) -> bool {

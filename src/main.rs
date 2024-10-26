@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use jvm::{ClassIdentifier, ClassName, Package};
+use tracing::{error, info};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -21,5 +22,8 @@ fn main() {
     let cli = Cli::parse();
     let package = Package::default();
     let name = ClassName::new(cli.main_class);
-    jvm::run(cli.classpath.unwrap(), ClassIdentifier::new(package, name))
+    match jvm::run(cli.classpath.unwrap(), ClassIdentifier::new(package, name)) {
+        Ok(_) => info!("Done!"),
+        Err(err) => error!("Error: {err:?}"),
+    }
 }

@@ -7,23 +7,25 @@ use crate::{
         descriptor::{Descriptor, FieldType},
     },
 };
+use anyhow::{bail, Context, Result};
 
-pub fn perform(executor: &mut Executor) {
-    executor.pc(1);
-    let indexbyte1 = executor.stack.get_opcode() as u16;
-    executor.pc(1);
-    let indexbyte2 = executor.stack.get_opcode() as u16;
-    executor.pc(1);
+pub fn perform(executor: &mut Executor) -> Result<()> {
+    executor.pc(1)?;
+    let indexbyte1 = executor.stack.get_opcode()? as u16;
+    executor.pc(1)?;
+    let indexbyte2 = executor.stack.get_opcode()? as u16;
+    executor.pc(1)?;
     let field_index = Index::new((indexbyte1 << 8) | indexbyte2);
-    let field = executor.resolve_field(&field_index);
-    let operands = executor.stack.pop_operands(1);
-    let value = operands.first().unwrap();
+    let field = executor.resolve_field(&field_index)?;
+    let operands = executor.stack.pop_operands(1)?;
+    let value = operands.first().context("local variables are empty")?;
 
     if !is_compatible(&field.descriptor, value) {
-        panic!("{field} cannot be set to {value}");
+        bail!("{field} cannot be set to {value}");
     }
 
     executor.assign_static_field(&field, value);
+    Ok(())
 }
 
 fn is_compatible(descriptor: &Descriptor, value: &Word) -> bool {

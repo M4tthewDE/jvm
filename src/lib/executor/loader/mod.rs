@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::collections::HashMap;
 
 use class_path::ClassPath;
@@ -20,9 +21,9 @@ impl ClassLoader {
         }
     }
 
-    pub fn load(&mut self, class_identifier: ClassIdentifier) -> Class {
+    pub fn load(&mut self, class_identifier: ClassIdentifier) -> Result<Class> {
         if let Some(c) = self.classes.get(&class_identifier) {
-            return c.clone();
+            return Ok(c.clone());
         }
 
         info!("Loading class {class_identifier}");
@@ -31,26 +32,27 @@ impl ClassLoader {
             .class_path
             .find(&class_identifier)
             .unwrap_or_else(|| panic!("unable to find class {class_identifier} in classpath"));
-        let class_file = ClassFile::new(&data, class_identifier.clone()).unwrap();
-        let class = Class::new(class_file);
+        let class_file = ClassFile::new(&data, class_identifier.clone())?;
+        let class = Class::new(class_file)?;
 
         self.classes.insert(class_identifier, class.clone());
-        class
+        Ok(class)
     }
 
-    pub fn load_main(&mut self, class_identifier: ClassIdentifier) {
+    pub fn load_main(&mut self, class_identifier: ClassIdentifier) -> Result<()> {
         if self.classes.contains_key(&class_identifier) {
-            return;
+            return Ok(());
         }
 
         info!("Loading main class {class_identifier}");
 
         let data = self.class_path.find(&class_identifier).unwrap();
-        let class_file = ClassFile::new(&data, class_identifier.clone()).unwrap();
-        let class = Class::new(class_file);
+        let class_file = ClassFile::new(&data, class_identifier.clone())?;
+        let class = Class::new(class_file)?;
         if !class.has_main() {
             panic!("No main method in class {class_identifier}");
         }
         self.classes.insert(class_identifier, class.clone());
+        Ok(())
     }
 }

@@ -9,7 +9,8 @@ fn test_main() {
     jvm::run(
         vec![PathBuf::from("testdata/")],
         ClassIdentifier::new(package, name),
-    );
+    )
+    .unwrap();
 }
 
 #[test]
@@ -20,5 +21,6 @@ fn test_main_no_main() {
     jvm::run(
         vec![PathBuf::from("testdata/")],
         ClassIdentifier::new(package, name),
-    );
+    )
+    .unwrap();
 }

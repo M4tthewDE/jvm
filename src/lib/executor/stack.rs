@@ -1,3 +1,4 @@
+use anyhow::{bail, Context, Result};
 use std::fmt::{Debug, Display};
 
 use crate::{
@@ -84,7 +85,7 @@ impl Display for Word {
 }
 
 #[derive(Debug)]
-struct Frame {
+pub struct Frame {
     local_variables: Vec<Word>,
     class: Class,
     method: Method,
@@ -102,8 +103,10 @@ impl Frame {
         }
     }
 
-    fn resolve_in_cp(&self, index: &Index) -> Option<ConstantPoolItem> {
-        self.class.resolve_in_cp(index)
+    fn resolve_in_cp(&self, index: &Index) -> Result<ConstantPoolItem> {
+        self.class
+            .resolve_in_cp(index)
+            .context("no entry at {index:?} in constant pool")
     }
 
     fn pc(&mut self, n: usize) {
@@ -129,90 +132,91 @@ impl Stack {
         }
     }
 
-    fn current_frame(&self) -> &Frame {
-        self.frames.last().unwrap()
+    fn current_frame(&self) -> Result<&Frame> {
+        self.frames.last().context("stack is empty")
     }
 
-    fn current_frame_mut(&mut self) -> &mut Frame {
-        self.frames.last_mut().unwrap()
+    fn current_frame_mut(&mut self) -> Result<&mut Frame> {
+        self.frames.last_mut().context("stack is empty")
     }
 
     pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
         self.frames.push(Frame::new(class, method, code, operands))
     }
 
-    pub fn can_access(&self, class: &Class) -> bool {
-        class.is_public() || class.identifier.package == self.current_frame().class.package()
+    pub fn can_access(&self, class: &Class) -> Result<bool> {
+        Ok(class.is_public() || class.identifier.package == self.current_frame()?.class.package())
     }
 
-    pub fn get_opcode(&self) -> u8 {
-        self.current_frame().get_op_code()
+    pub fn get_opcode(&self) -> Result<u8> {
+        Ok(self.current_frame()?.get_op_code())
     }
 
-    pub fn pop_operands(&mut self, n: usize) -> Vec<Word> {
+    pub fn pop_operands(&mut self, n: usize) -> Result<Vec<Word>> {
         let mut operands = Vec::new();
         for _ in 0..n {
-            operands.push(self.operand_stack.pop().unwrap());
+            operands.push(self.operand_stack.pop().context("operand stack is empty")?);
         }
 
-        operands
+        Ok(operands)
     }
 
     pub fn push_operand(&mut self, word: Word) {
         self.operand_stack.push(word);
     }
 
-    pub fn local_variables(&self) -> Vec<Word> {
-        self.current_frame().local_variables.clone()
+    pub fn local_variables(&self) -> Result<Vec<Word>> {
+        Ok(self.current_frame()?.local_variables.clone())
     }
 
-    pub fn current_method(&self) -> Method {
-        self.current_frame().method.clone()
+    pub fn current_method(&self) -> Result<Method> {
+        Ok(self.current_frame()?.method.clone())
     }
 
-    pub fn pc(&mut self, n: usize) {
-        self.current_frame_mut().pc(n);
+    pub fn pc(&mut self, n: usize) -> Result<()> {
+        self.current_frame_mut()?.pc(n);
+        Ok(())
     }
 
-    pub fn pop(&mut self) {
-        self.frames.pop().unwrap();
+    pub fn pop(&mut self) -> Option<Frame> {
+        self.frames.pop()
     }
 
-    pub fn resolve_in_cp(&self, index: &Index) -> ConstantPoolItem {
-        self.current_frame().resolve_in_cp(index).unwrap()
+    pub fn resolve_in_cp(&self, index: &Index) -> Result<ConstantPoolItem> {
+        self.current_frame()?.resolve_in_cp(index)
     }
 
-    pub fn lookup_field(&self, index: &Index) -> Option<(ClassIdentifier, NameAndType)> {
+    pub fn lookup_field(&self, index: &Index) -> Result<(ClassIdentifier, NameAndType)> {
         if let ConstantPoolItem::FieldRef {
             class_identifier,
             name_and_type,
-        } = self.current_frame().resolve_in_cp(index)?
+        } = self.current_frame()?.resolve_in_cp(index)?
         {
-            Some((class_identifier, name_and_type))
+            Ok((class_identifier, name_and_type))
         } else {
-            None
+            bail!("no field found for {index:?}")
         }
     }
 
-    pub fn lookup_method(&self, index: &Index) -> Option<(ClassIdentifier, NameAndType)> {
+    pub fn lookup_method(&self, index: &Index) -> Result<(ClassIdentifier, NameAndType)> {
         if let ConstantPoolItem::MethodRef {
             class_identifier,
             name_and_type,
-        } = self.current_frame().resolve_in_cp(index)?
+        } = self.current_frame()?.resolve_in_cp(index)?
         {
-            Some((class_identifier, name_and_type))
+            Ok((class_identifier, name_and_type))
         } else {
-            None
+            bail!("no method found for {index:?}")
         }
     }
 
-    pub fn lookup_class(&self, index: &Index) -> Option<ClassIdentifier> {
+    pub fn lookup_class(&self, index: &Index) -> Result<ClassIdentifier> {
         if let ConstantPoolItem::ClassInfo { identifier } =
-            self.current_frame().resolve_in_cp(index)?
+            self.current_frame()?.resolve_in_cp(index)?
         {
-            Some(identifier)
+            Ok(identifier)
         } else {
-            None
+            bail!("no class found for {index:?}")
         }
     }
 }

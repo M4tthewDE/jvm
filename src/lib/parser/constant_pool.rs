@@ -202,6 +202,7 @@ impl ConstantPool {
         }
     }
 
+    // TODO: return Result instead
     pub fn utf8(&self, index: &Index) -> Option<String> {
         if let ConstantPoolInfo::Utf { text } = self.infos.get(index.index)? {
             Some(text.to_string())

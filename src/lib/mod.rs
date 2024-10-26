@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::{fmt::Display, path::PathBuf};
 
 use executor::{
@@ -8,13 +9,13 @@ use executor::{
 mod executor;
 mod parser;
 
-pub fn run(class_path: Vec<PathBuf>, main_class: ClassIdentifier) {
+pub fn run(class_path: Vec<PathBuf>, main_class: ClassIdentifier) -> Result<()> {
     let class_path = ClassPath::load(class_path);
     let mut class_loader = ClassLoader::new(class_path);
-    class_loader.load_main(main_class.clone());
+    class_loader.load_main(main_class.clone())?;
 
     let mut executor = Executor::new(class_loader);
-    executor.execute(main_class);
+    executor.execute(main_class)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
