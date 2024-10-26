@@ -59,14 +59,14 @@ impl Executor {
         let method = class.main_method()?;
 
         // TODO: add []String args, see invokestatic for reference
-        let code = Code::new(method.code_attribute()?);
+        let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
         self.execute_code()
     }
 
     fn execute_clinit(&mut self, class: Class, method: Method) -> Result<()> {
         info!("Executing clinit for {}", class.identifier);
-        let code = Code::new(method.code_attribute()?);
+        let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
         self.execute_code()?;
         todo!("after execute clinit");
@@ -134,7 +134,7 @@ impl Executor {
             Ok(())
         } else {
             let method = class.method(&name_and_type.name, method_descriptor)?;
-            let code = Code::new(method.code_attribute()?);
+            let code = Code::new(method.code_attribute()?)?;
             self.stack.create(class, method, code, operands);
             self.execute_code()?;
             bail!("after invoke_static has executed its code");
@@ -161,7 +161,7 @@ impl Executor {
     fn assign_static_field(&mut self, field: &Field, value: &Word) -> Result<()> {
         if let Some(ref mut class) = self.class_being_initialized {
             debug!("Assigning {field} in {class}");
-            class.set_field(field, value);
+            class.set_field(field, value)?;
             self.class_being_initialized = Some(class.clone());
             Ok(())
         } else {

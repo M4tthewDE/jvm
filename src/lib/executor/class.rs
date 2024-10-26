@@ -104,14 +104,14 @@ impl Class {
         self.constant_pool.resolve(index)
     }
 
-    pub fn set_field(&mut self, field: &Field, value: &Word) {
+    pub fn set_field(&mut self, field: &Field, value: &Word) -> Result<()> {
         for f in &mut self.fields {
             if f == field {
                 f.value = value.clone();
-                return;
+                return Ok(());
             }
         }
 
-        panic!("field {field} not found in {self}");
+        bail!("field {field} not found in {self}");
     }
 }

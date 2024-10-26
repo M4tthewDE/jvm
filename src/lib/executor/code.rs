@@ -1,3 +1,5 @@
+use anyhow::{bail, Result};
+
 use crate::parser::attribute::Attribute;
 
 #[derive(Debug, Clone, Default)]
@@ -6,7 +8,7 @@ pub struct Code {
 }
 
 impl Code {
-    pub fn new(code_attribute: Attribute) -> Self {
+    pub fn new(code_attribute: Attribute) -> Result<Self> {
         if let Attribute::Code {
             max_stacks: _,
             max_locals: _,
@@ -15,9 +17,10 @@ impl Code {
             attributes: _,
         } = code_attribute
         {
-            return Self { opcodes: code };
+            return Ok(Self { opcodes: code });
         }
-        panic!("can't construct Code out of {:?}", code_attribute);
+
+        bail!("can't construct Code out of {:?}", code_attribute);
     }
 
     pub fn get_opcode(&self, i: usize) -> Option<u8> {
