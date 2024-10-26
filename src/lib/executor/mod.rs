@@ -62,10 +62,10 @@ impl Executor {
         let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
         self.execute_code()
+            .with_context(|| format!("{}", self.stack))
     }
 
     fn execute_clinit(&mut self, class: Class, method: Method) -> Result<()> {
-        info!("Executing clinit for {}", class.identifier);
         let code = Code::new(method.code_attribute()?)?;
         self.stack.create(class, method, code, vec![]);
         self.execute_code()?;

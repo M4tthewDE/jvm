@@ -92,6 +92,7 @@ pub struct Frame {
     code: Code,
     pc: usize,
 }
+
 impl Frame {
     fn new(class: Class, method: Method, code: Code, operands: Vec<Word>) -> Self {
         Self {
@@ -120,6 +121,12 @@ impl Frame {
     }
 }
 
+impl Display for Frame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.class, self.method.name)
+    }
+}
+
 #[derive(Debug)]
 pub struct Stack {
     frames: Vec<Frame>,
@@ -143,7 +150,7 @@ impl Stack {
     }
 
     pub fn create(&mut self, class: Class, method: Method, code: Code, operands: Vec<Word>) {
-        self.frames.push(Frame::new(class, method, code, operands))
+        self.frames.push(Frame::new(class, method, code, operands));
     }
 
     pub fn can_access(&self, class: &Class) -> Result<bool> {
@@ -220,5 +227,16 @@ impl Stack {
         } else {
             bail!("no class found for {index:?}")
         }
+    }
+}
+
+impl Display for Stack {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f)?;
+        for frame in &self.frames {
+            writeln!(f, "{frame}")?;
+        }
+
+        Ok(())
     }
 }

@@ -2,7 +2,6 @@ use anyhow::{bail, Result};
 use std::collections::HashMap;
 
 use class_path::ClassPath;
-use tracing::info;
 
 use crate::{executor::class::Class, parser::class::ClassFile, ClassIdentifier};
 
@@ -26,8 +25,6 @@ impl ClassLoader {
             return Ok(c.clone());
         }
 
-        info!("Loading class {class_identifier}");
-
         let data = self.class_path.find(&class_identifier)?;
         let class_file = ClassFile::new(&data, class_identifier.clone())?;
         let class = Class::new(class_file)?;
@@ -40,8 +37,6 @@ impl ClassLoader {
         if self.classes.contains_key(&class_identifier) {
             return Ok(());
         }
-
-        info!("Loading main class {class_identifier}");
 
         let data = self.class_path.find(&class_identifier)?;
         let class_file = ClassFile::new(&data, class_identifier.clone())?;

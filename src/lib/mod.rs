@@ -35,9 +35,17 @@ impl Display for ClassName {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Package {
     pub name: String,
+}
+
+impl Default for Package {
+    fn default() -> Self {
+        Self {
+            name: "<default>".to_string(),
+        }
+    }
 }
 
 impl Package {

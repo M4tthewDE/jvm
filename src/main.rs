@@ -25,6 +25,6 @@ fn main() {
 
     match jvm::run(cli.classpath, ClassIdentifier::new(package, name)) {
         Ok(_) => info!("Done!"),
-        Err(err) => error!("Error: {err:?}"),
+        Err(err) => error!("{err:?}"),
     }
 }
