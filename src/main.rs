@@ -12,7 +12,7 @@ use tracing::{error, info};
 #[command(version, about, long_about = None)]
 struct Cli {
     #[arg(short, long)]
-    classpath: Option<Vec<PathBuf>>,
+    classpath: Vec<PathBuf>,
     #[arg(short, long)]
     main_class: String,
 }
@@ -22,7 +22,8 @@ fn main() {
     let cli = Cli::parse();
     let package = Package::default();
     let name = ClassName::new(cli.main_class);
-    match jvm::run(cli.classpath.unwrap(), ClassIdentifier::new(package, name)) {
+
+    match jvm::run(cli.classpath, ClassIdentifier::new(package, name)) {
         Ok(_) => info!("Done!"),
         Err(err) => error!("Error: {err:?}"),
     }
