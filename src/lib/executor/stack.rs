@@ -233,7 +233,7 @@ impl Stack {
 impl Display for Stack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f)?;
-        for frame in &self.frames {
+        for frame in self.frames.iter().rev() {
             writeln!(f, "{frame}")?;
         }
 

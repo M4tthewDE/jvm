@@ -11,7 +11,7 @@ pub struct Instance {
 
 impl Instance {
     pub fn new(class: Class) -> Result<Self> {
-        if class.fields.len() != 0 {
+        if !class.fields.is_empty() {
             bail!("instance fields are not supported yet");
         }
 

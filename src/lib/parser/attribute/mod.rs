@@ -8,7 +8,7 @@ use inner_class::InnerClass;
 use line_number_table_entry::LineNumberTableEntry;
 use local_variable::{LocalVariable, LocalVariableType};
 use stack_map_frame::StackMapFrame;
-use tracing::{debug, instrument};
+use tracing::{instrument, trace};
 
 use super::{
     constant_pool::{ConstantPool, Index},
@@ -87,7 +87,7 @@ impl Attribute {
         c.seek_relative(4)?;
 
         let text = Attribute::get_text(constant_pool, &name_index)?;
-        debug!("parsing attribute {text}");
+        trace!("parsing attribute {text}");
 
         match text.as_str() {
             "Code" => Self::code(c, constant_pool),

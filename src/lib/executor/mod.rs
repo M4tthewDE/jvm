@@ -102,6 +102,7 @@ impl Executor {
         loop {
             let op_code = self.stack.get_opcode()?;
             let op = op::get_op(op_code)?;
+            debug!("{}", self.stack);
             info!("Executing {}", op::name(op_code)?);
             op(self)?;
         }

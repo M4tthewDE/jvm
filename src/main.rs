@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use jvm::{ClassIdentifier, ClassName, Package};
 use tracing::{error, info};
+use tracing_subscriber::{prelude::*, EnvFilter};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -18,7 +19,10 @@ struct Cli {
 }
 
 fn main() {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
     let cli = Cli::parse();
     let package = Package::default();
     let name = ClassName::new(cli.main_class);
